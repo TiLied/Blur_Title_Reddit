@@ -10,8 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.2.04
-// @grant       GM_addStyle
+// @version     0.2.05
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -20,65 +19,6 @@
 
 // Append some text to the element with id someText using the jQuery library. TEST JQUERY
 //$("#hsts_pixel").append(" more text.");
-
-//Add css
-//console.log("Begin");
-GM_addStyle ( "                           \
-bdi.btr_title                             \
-{                                         \
-    color:rgba(255,60,231,0) !important;  \
-    text-shadow: 0px 0px 1em black;       \
-    padding: 0 2px;                       \
-}                                         \
-");
-
-//GM_addStyle("                             \
-//bdi.btr_title:hover,bdi.btr_title:focus   \
-//{                                         \
-//    color:black!important;                \
-//    background:transparent!important;     \
-//    text-decoration:none!important;       \
-//    text-shadow:0 0.1px 0 #dcddce         \
-//}                                         \
-//");
-
-GM_addStyle ( "                           \
-bdi.btr_trans                             \
-{                                         \
-    transition: all 0.5s ease;            \
-}                                         \
-");
-
-GM_addStyle("                           \
-.btr_closeButton                             \
-{                         \
-    cursor: pointer; \
-    text-align: center; \
-    font-size: 11px; \
-    float:right;                           \
-    margin-top:0px;                     \
-    border:1px solid #AAA;               \
-    width:16px;                         \
-    height:16px;                        \
-}                                         \
-");
-
-GM_addStyle("                           \
-.btr_closeButton:hover                             \
-{                         \
-    border:1px solid #999;               \
-    background-color: #ddd;                          \
-}                                         \
-");
-
-GM_addStyle ( "                           \
-.title                                    \
-{                                         \
-    overflow: visible !important;         \
-}                                         \
-" );
-//end of css
-//console.log("its working styles");
 
 var res;
 var currentLocation;
@@ -118,6 +58,8 @@ Main();
   
 function Main() {
 
+    setCSS();
+
     //$(document).ready(function () {
       //  checkRES();
     //});
@@ -144,6 +86,53 @@ function Main() {
     }
     optionsUI();
     //console.log(GM_listValues());
+}
+
+//css
+function setCSS()
+{
+    $("head").append($("<style type=text/css></style>").text(" bdi.btr_title   { \
+       color:rgba(255,60,231,0) !important;        \
+       text-shadow: 0px 0px 1em black;               \
+       padding: 0 2px;                               \
+    }                                         \
+    "));
+
+    $("head").append($("<style type=text/css></style>").text(" \
+    bdi.btr_trans                             \
+    {                                         \
+       transition: all 0.5s ease;            \
+    }                                         \
+    "));
+
+    $("head").append($("<style type=text/css></style>").text(" \
+    .btr_closeButton                             \
+    {                         \
+        cursor: pointer; \
+        text-align: center; \
+        font-size: 11px; \
+        float:right;                           \
+        margin-top:0px;                     \
+        border:1px solid #AAA;               \
+        width:16px;                         \
+        height:16px;                        \
+    }                                         \
+    "));
+
+    $("head").append($("<style type=text/css></style>").text(" \
+    .btr_closeButton:hover                             \
+    {                         \
+        border:1px solid #999;               \
+        background-color: #ddd;                          \
+    }                                         \
+    "));
+
+    $("head").append($("<style type=text/css></style>").text(" \
+    .title                                    \
+    {                                         \
+       overflow: visible !important;         \
+    }                                         \
+    "));
 }
 
 //Check  Reddit Enhancement Suite
@@ -221,14 +210,6 @@ function optionsUI()
     //var t = document.createTextNode("btr_opt {font: 20px verdana;}");
     //x.appendChild(t);
     //document.head.appendChild(x);
-    if (btr_pTitle === true) {
-        check = "<input type=radio name=title id=btr_showTitle >Show brackets</input><br> \
-                 <input type=radio name=title id=btr_hideTitle checked>Hide brackets</input><br>";
-    } else
-    {
-        check = "<input type=radio name=title id=btr_showTitle checked>Show brackets</input><br> \
-                 <input type=radio name=title id=btr_hideTitle >Hide brackets</input><br>";
-    }
 
   //  settingsDiv = $("<div id=btrSettings></div>").html("<h1>Settings of Blur Title Reddit</h1>\
   //<form> \
@@ -245,12 +226,28 @@ function optionsUI()
   <form> \
   <br> \
   <p>Bluring option:</p>\
-  " + check + " \
+  <input type=radio name=title id=btr_showTitle >Show brackets</input><br> \
+  <input type=radio name=title id=btr_hideTitle >Hide brackets</input><br> \
   </form> <br> \
   <button id=btr_hide>Hide Settings</button></li></ul></div></div> \
   ");
 
+
+
     $("body").append(settingsDiv);
+
+    //console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
+    //console.log($("[name='title']")[1]);
+    if (btr_pTitle === true)
+    {
+        $("#btr_hideTitle").prop("checked", true);
+        //$("btr_showTitle").prop("checked", false);
+    } else
+    {
+        $("#btr_showTitle").prop("checked", true);
+        //$("btr_hideTitle").prop("checked", false);
+    }
+
     $("#btrSettings").hide();
     //$("body").append($("<button type=button onclick=$(#btrSettings).show()>Click Me!</button>"));
     //$("body").append("<button id=btr_hide>Hide</button>");
@@ -329,7 +326,8 @@ function myFunction() {
             }                                         \
             ";
                 //console.log(stringCSS);
-                GM_addStyle(stringCSS);
+                //GM_addStyle(stringCSS);
+                $("head").append($("<style type=text/css></style>").text(stringCSS));
             });
         }       
         findbracPref(len[i], stringArr[i], titlesTitle[i]);
@@ -497,7 +495,7 @@ function menuCommand() {
 // ------------
 
 /* TODO STARTS
-    1)Rewrite everything in Jquery ***RESEARCH NEEDED***
+✓    1)Rewrite everything in Jquery ***RESEARCH NEEDED*** by this mean delete GM_addstyle //DONE 0.2.05
     2)Made it exclude of users, mean that post of their users WILL NOT bluring, Partial done(array) in 0.0.0.08
     3)Make it exclude of linkflairs, because every subreddit has its own flair its hard ***RESEARCH NEEDED***
      3.1)Some subreddits has own spoiler-flair, which can be good to blur, because they don't use buildin in reddit

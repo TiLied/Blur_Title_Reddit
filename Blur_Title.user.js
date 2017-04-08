@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.2.05
+// @version     0.2.06
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -20,34 +20,38 @@
 // Append some text to the element with id someText using the jQuery library. TEST JQUERY
 //$("#hsts_pixel").append(" more text.");
 
-var res;
-var currentLocation;
-var titles = document.querySelectorAll("a.title");
-//var titlesDiv = document.querySelectorAll("div.spoiler");
-var titlesDiv = [];
-var titlesDivO = document.querySelectorAll("div.spoiler");
-var titlesTitle = [];
-//var color = document.querySelectorAll("a.title").style.color;
-var stringArr = [];
-var stringOri = [];
-var string;
-var stringStartbdi = '<bdi class = "btr_main btr_title btr_trans">';
-var stringEndbdi = '</bdi>';
-var stringCSS;
-var originStrings = [];
-var len = [];
-var i;
-var firstB;
-var lastB;
-var col;
-var lengthOfIndexes;
-var arrBeg = [];
-var arrEnd = [];
-var settingsDiv;
+
+//not empty val
+var titles = document.querySelectorAll("a.title"),
+    titlesDivO = document.querySelectorAll("div.spoiler"),
+    stringStartbdi = '<bdi class = "btr_main btr_title btr_trans">',
+    stringEndbdi = '</bdi>';
+
+//empty val
+var res,
+    currentLocation,
+    string,
+    stringCSS,
+    i,
+    firstB,
+    lastB,
+    col,
+    lengthOfIndexes,
+    settingsDiv;
+
+//arrays
+var titlesDiv = [],
+    titlesTitle = [],
+    stringArr = [],
+    stringOri = [],
+    originStrings = [],
+    len = [],
+    arrBeg = [],
+    arrEnd = [];
 
 //prefs
-var btr_pTitle;
-var btr_pUsers;
+var btr_pTitle,
+    btr_pUsers;
 
 if (currentLocation === undefined) {
     currentLocation = window.location;
@@ -56,7 +60,10 @@ if (currentLocation === undefined) {
 Main();
 
   
-function Main() {
+function Main()
+{
+
+    console.log("Blur Title Reddit v" + GM_info.script.version + " Initialized");
 
     setCSS();
 

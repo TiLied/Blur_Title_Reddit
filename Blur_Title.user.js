@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.2.06
+// @version     0.2.07
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -65,14 +65,14 @@ function Main()
 
     console.log("Blur Title Reddit v" + GM_info.script.version + " Initialized");
 
-    setCSS();
+    SetCSS();
 
     //$(document).ready(function () {
-      //  checkRES();
+      //  CheckRES();
     //});
 
     //Menu Monkey Command
-    GM_registerMenuCommand("Show Settings Blur Title Reddit", menuCommand);
+    GM_registerMenuCommand("Show Settings Blur Title Reddit", MenuCommand);
 
     if (titlesDivO.length != 0) {
         console.log(titlesDivO);
@@ -83,20 +83,20 @@ function Main()
         console.log(titlesDiv);
         if (GM_getValue("btr_GMTitle")) {
             btr_pTitle = GM_getValue("btr_GMTitle");
-            myFunction();
+            MyFunction();
         } else
         {
             GM_setValue("btr_GMTitle", false);
             btr_pTitle = GM_getValue("btr_GMTitle");
-            myFunction();
+            MyFunction();
         }
     }
-    optionsUI();
+    OptionsUI();
     //console.log(GM_listValues());
 }
 
 //css
-function setCSS()
+function SetCSS()
 {
     $("head").append($("<style type=text/css></style>").text(" bdi.btr_title   { \
        color:rgba(255,60,231,0) !important;        \
@@ -143,7 +143,7 @@ function setCSS()
 }
 
 //Check  Reddit Enhancement Suite
-function checkRES()
+function CheckRES()
 {
         if ($(".neverEndingReddit").length === 0) {
             console.log($(".neverEndingReddit"));
@@ -160,26 +160,26 @@ function checkRES()
                                             if ($(".neverEndingReddit").length === 0) {
                                                 return;
                                             } else {
-                                                searchForNER();
+                                                SearchForNER();
                                                 return;
                                             }
                                         }, 7000);
                                     } else {
-                                        searchForNER();
+                                        SearchForNER();
                                         return;
                                     }                              
                             }, 3000);
                         } else {
-                            searchForNER();
+                            SearchForNER();
                             return;
                         }
                 } else {
-                    searchForNER();
+                    SearchForNER();
                     return;
                 }
             } else
             {
-                searchForNER();
+                SearchForNER();
                 return;
             }
             //console.log("Check current RES : " + res[0]);
@@ -187,7 +187,7 @@ function checkRES()
     //console.log("Check current RES : " + res[0]);
 }
 
-function searchForNER()
+function SearchForNER()
 {
     res = true;
     console.log("Check current RES : " + res);
@@ -198,7 +198,7 @@ function searchForNER()
 
 
 //UI FOR SETTINGS
-function optionsUI()
+function OptionsUI()
 {
 //    $("head").append($("<style type=text/css></style>").text("div.btr_opt { \
 //    height: 300px; \
@@ -261,16 +261,16 @@ function optionsUI()
     $("#btr_showTitle").change(function () {
         GM_setValue("btr_GMTitle", false);
         btr_pTitle = GM_getValue("btr_GMTitle");
-        replaceOriginalTitles();
-        myFunction();
+        ReplaceOriginalTitles();
+        MyFunction();
         alert("Settings has been changed. Now brackets showing.");
         console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
     });
     $("#btr_hideTitle").change(function () {
         GM_setValue("btr_GMTitle", true);
         btr_pTitle = GM_getValue("btr_GMTitle");
-        replaceOriginalTitles();
-        myFunction();
+        ReplaceOriginalTitles();
+        MyFunction();
         alert("Settings has been changed. Now brackets hiding.");
         console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
     });
@@ -302,7 +302,7 @@ function optionsUI()
 
 }
 
-function myFunction() {
+function MyFunction() {
     if (titlesTitle.length === 0) {
         for (i = 0; i < titlesDiv.length; i++) {
             if (titlesDiv[i].querySelector("div.entry.unvoted")) {
@@ -337,56 +337,56 @@ function myFunction() {
                 $("head").append($("<style type=text/css></style>").text(stringCSS));
             });
         }       
-        findbracPref(len[i], stringArr[i], titlesTitle[i]);
+        FindBracPref(len[i], stringArr[i], titlesTitle[i]);
         //console.log("array " + stringArr[i]);
     }
 
 }
 
-function findbracPref(l, sArr, tTitle)
+function FindBracPref(l, sArr, tTitle)
 {
     //console.log(GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
     if (btr_pTitle === true) {
-        // console.log(getAllIndexes(sArr, "[", "("));
+        // console.log(GetAllIndexes(sArr, "[", "("));
         lengthOfIndexes = 0;
-        findBrac(l, sArr, tTitle, lengthOfIndexes);
+        FindBrac(l, sArr, tTitle, lengthOfIndexes);
     } else
     {
-        // console.log(getAllIndexes(sArr, "[", "("));
-        lengthOfIndexes = getAllIndexes(sArr, "[", "(").length;
-        findBrac(l, sArr, tTitle, lengthOfIndexes);
+        // console.log(GetAllIndexes(sArr, "[", "("));
+        lengthOfIndexes = GetAllIndexes(sArr, "[", "(").length;
+        FindBrac(l, sArr, tTitle, lengthOfIndexes);
     }
 }
 
-function findBrac(l, sArr, tTitle, lengthOfIndexes) {
+function FindBrac(l, sArr, tTitle, lengthOfIndexes) {
     switch(lengthOfIndexes) {
         case 0:
-            changeString(l, sArr, tTitle, 0);
+            ChangeString(l, sArr, tTitle, 0);
             break;
         case 1:
-            changeString(l, sArr, tTitle, 1);
+            ChangeString(l, sArr, tTitle, 1);
             break;
         case 2:
-            changeString(l, sArr, tTitle, 2);
+            ChangeString(l, sArr, tTitle, 2);
             break;
         case 3:
-            changeString(l, sArr, tTitle, 1); //TODO 3
+            ChangeString(l, sArr, tTitle, 1); //TODO 3
             break;
         case 4:
-            changeString(l, sArr, tTitle, 1); //TODO 4
+            ChangeString(l, sArr, tTitle, 1); //TODO 4
             break;
         case 5:
-            changeString(l, sArr, tTitle, 1); //TODO MAYBE 5
+            ChangeString(l, sArr, tTitle, 1); //TODO MAYBE 5
             break;
         default:
-            changeString(l, sArr, tTitle, 0);
+            ChangeString(l, sArr, tTitle, 0);
             return;
     } 
 }
 
-function changeString(l, sArr, tTitle, amount) {
-    arrBeg = getAllIndexes(sArr, "[", "(");
-    arrEnd = getAllIndexes(sArr, "]", ")");
+function ChangeString(l, sArr, tTitle, amount) {
+    arrBeg = GetAllIndexes(sArr, "[", "(");
+    arrEnd = GetAllIndexes(sArr, "]", ")");
     console.log("*str of brackets :", arrBeg);
     console.log("*end of brackets :", arrEnd);
     if (amount === 0) {
@@ -477,7 +477,7 @@ function changeString(l, sArr, tTitle, amount) {
     }
 }
 
-function getAllIndexes(arr, val1, val2) {
+function GetAllIndexes(arr, val1, val2) {
     var indexes = [], x;
     for (x = 0; x < arr.length; x++)
         if (arr[x] === val1 || arr[x] === val2)
@@ -485,14 +485,14 @@ function getAllIndexes(arr, val1, val2) {
     return indexes;
 }
 
-function replaceOriginalTitles()
+function ReplaceOriginalTitles()
 {
     for (i = 0; i < titlesTitle.length; i++) {
         titlesTitle[i].innerHTML = originStrings[i];
     }
 }
 
-function menuCommand() {
+function MenuCommand() {
     $("#btrSettings").show(1000);
     $("#btrSettings").addClass("btr_opt");
 }

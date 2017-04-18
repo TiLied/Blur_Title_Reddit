@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.2.07
+// @version     0.2.08
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -51,7 +51,8 @@ var titlesDiv = [],
 
 //prefs
 var btr_pTitle,
-    btr_pUsers;
+    btr_pUsers,
+    debug;
 
 if (currentLocation === undefined) {
     currentLocation = window.location;
@@ -397,6 +398,16 @@ function ChangeString(l, sArr, tTitle, amount) {
     }
     if (amount === 1) {
         console.log("*words in brackets :", sArr.substring(arrBeg[0], arrEnd[0] + 1));
+
+        //IF WHOLE TITLE IN BRACKETS
+        if (arrBeg[0] <= 2 && arrEnd[0] >= l - 2)
+        {
+            string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
+            console.info(string);
+            tTitle.innerHTML = string;
+            return;
+        }
+
         if (arrBeg[0] <= 2)
         {
             string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, l) + ' ' + stringEndbdi;
@@ -424,6 +435,16 @@ function ChangeString(l, sArr, tTitle, amount) {
             s += sArr.substring(arrBeg[a], arrEnd[a] + 1) + ' ';
         }
         console.log("*words in brackets :", s);
+
+        //IF WHOLE TITLE IN BRACKETS
+        if ((arrBeg[0] <= 2 && arrEnd[0] >= l - 2) || (arrBeg[1] <= 2 && arrEnd[1] >= l - 2))
+        {
+            string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
+            console.info(string);
+            tTitle.innerHTML = string;
+            return;
+        }
+
         if (arrBeg[0] <= 2) {
             if (arrEnd[0] + 4 > arrBeg[1])
             {
@@ -517,7 +538,7 @@ function MenuCommand() {
      8.1)What it remember color after you clicked ***RESEARCH NEEDED***
     9)Make it if brackets in the middle should unblury two or more part, dont know how currently ***RESEARCH NEEDED***
     10)Want it if title whithout brackets but has name of anime, show etc. blur everything exclude NAME, its hard
-    11)Add if title(Somehow)... full title in brackets, forced blur anyway 
+✓    11)Add if title(Somehow)... full title in brackets, forced blur anyway      //DONE 0.2.08 
     12)Make it work when searching
     13)Make options ***RESEARCH NEEDED*** Partial done(array) in 0.0.0.09
 ✓    13.0)UI     //DONE 0.1.00 

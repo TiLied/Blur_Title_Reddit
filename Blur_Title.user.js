@@ -10,10 +10,11 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.2.08
+// @version     0.2.09
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
+// @grant       GM_deleteValue
 // @grant       GM_registerMenuCommand
 // ==/UserScript==
 
@@ -54,9 +55,11 @@ var btr_pTitle,
     btr_pUsers,
     debug;
 
-if (currentLocation === undefined) {
-    currentLocation = window.location;
-}
+
+//tests
+//if (currentLocation === undefined) {
+//    currentLocation = window.location;
+//}
 
 Main();
 
@@ -82,18 +85,58 @@ function Main()
             titlesDiv[i] = titlesDivO[i];
         }
         console.log(titlesDiv);
-        if (GM_getValue("btr_GMTitle")) {
-            btr_pTitle = GM_getValue("btr_GMTitle");
-            MyFunction();
-        } else
-        {
-            GM_setValue("btr_GMTitle", false);
-            btr_pTitle = GM_getValue("btr_GMTitle");
-            MyFunction();
-        }
+
+        SetSettings();
+        MyFunction();
     }
     OptionsUI();
     //console.log(GM_listValues());
+}
+
+//set settings
+function SetSettings()
+{
+    //THIS IS ABOUT TITLE
+    if (HasValue("btr_GMTitle", false))
+    {
+        btr_pTitle = GM_getValue("btr_GMTitle");
+    }
+
+    //THIS IS ABOUT DEBUG
+    if (HasValue("debug", false))
+    {
+        debug = GM_getValue("debug");
+    }
+}
+
+//Check if value exists or not.  optValue = Optional
+function HasValue(nameVal, optValue)
+{
+    var vals = [];
+    for (var i = 0; i < GM_listValues().length; i++)
+    {
+        vals[i] = GM_listValues()[i];
+    }
+
+    if (vals.length === 0)
+    {
+        GM_setValue(nameVal, optValue);
+        return true;
+    }
+
+    for (var i = 0; i < vals.length; i++)
+    {
+        if (vals[i] === nameVal)
+        {
+            return true;
+        }
+    }
+
+    if (optValue != undefined)
+    {
+        GM_setValue(nameVal, optValue);
+        return true;
+    }
 }
 
 //css
@@ -147,17 +190,32 @@ function SetCSS()
 function CheckRES()
 {
         if ($(".neverEndingReddit").length === 0) {
-            console.log($(".neverEndingReddit"));
-            if ($(".neverEndingReddit").length === 0) {
+            if (debug)
+            {
                 console.log($(".neverEndingReddit"));
+            }
+            if ($(".neverEndingReddit").length === 0) {
+                if (debug)
+                {
+                    console.log($(".neverEndingReddit"));
+                }
                 if ($(".neverEndingReddit").length === 0) {
+                    if (debug)
+                    {
                         console.log($(".neverEndingReddit"));
+                    }
                         if ($(".neverEndingReddit").length === 0) {
                             setTimeout(function () {
+                                if (debug)
+                                {
                                     console.log($(".neverEndingReddit"));
+                                }
                                     if ($(".neverEndingReddit").length === 0) {
                                         setTimeout(function () {
-                                            console.log($(".neverEndingReddit"));
+                                            if (debug)
+                                            {
+                                                console.log($(".neverEndingReddit"));
+                                            }
                                             if ($(".neverEndingReddit").length === 0) {
                                                 return;
                                             } else {
@@ -184,14 +242,17 @@ function CheckRES()
                 return;
             }
             //console.log("Check current RES : " + res[0]);
-        } 
+        }
     //console.log("Check current RES : " + res[0]);
 }
 
 function SearchForNER()
 {
     res = true;
-    console.log("Check current RES : " + res);
+    if (debug)
+    {
+        console.log("Check current RES : " + res);
+    }
     $(".neverEndingReddit").on("click", function () {
         alert("Settings has been changed. Now brackets hiding.");
     });
@@ -235,7 +296,8 @@ function OptionsUI()
   <br> \
   <p>Bluring option:</p>\
   <input type=radio name=title id=btr_showTitle >Show brackets</input><br> \
-  <input type=radio name=title id=btr_hideTitle >Hide brackets</input><br> \
+  <input type=radio name=title id=btr_hideTitle >Hide brackets</input><br><br> \
+  <input type=checkbox name=debug id=debug >Debug</input><br> \
   </form> <br> \
   <button id=btr_hide>Hide Settings</button></li></ul></div></div> \
   ");
@@ -246,6 +308,14 @@ function OptionsUI()
 
     //console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
     //console.log($("[name='title']")[1]);
+    if (debug === true)
+    {
+        $("#debug").prop("checked", true);
+    } else
+    {
+        $("#debug").prop("checked", false);
+    }
+
     if (btr_pTitle === true)
     {
         $("#btr_hideTitle").prop("checked", true);
@@ -259,13 +329,34 @@ function OptionsUI()
     $("#btrSettings").hide();
     //$("body").append($("<button type=button onclick=$(#btrSettings).show()>Click Me!</button>"));
     //$("body").append("<button id=btr_hide>Hide</button>");
+    $("#debug").change(function ()
+    {
+        if (debug === true)
+        {
+            GM_setValue("debug", false);
+            debug = GM_getValue("debug");
+        } else
+        {
+            GM_setValue("debug", true);
+            debug = GM_getValue("debug");
+        }
+
+        confirm("Settings has been changed.");
+        if (debug)
+        {
+            console.log('debug: ' + GM_getValue("debug") + ' and debug: ' + debug);
+        }
+    });
     $("#btr_showTitle").change(function () {
         GM_setValue("btr_GMTitle", false);
         btr_pTitle = GM_getValue("btr_GMTitle");
         ReplaceOriginalTitles();
         MyFunction();
         alert("Settings has been changed. Now brackets showing.");
-        console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
+        if (debug)
+        {
+            console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
+        }
     });
     $("#btr_hideTitle").change(function () {
         GM_setValue("btr_GMTitle", true);
@@ -273,7 +364,10 @@ function OptionsUI()
         ReplaceOriginalTitles();
         MyFunction();
         alert("Settings has been changed. Now brackets hiding.");
-        console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
+        if (debug)
+        {
+            console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
+        }
     });
 
     //TODO
@@ -318,12 +412,18 @@ function MyFunction() {
 
     for (i = 0; i < titlesDiv.length; i++) {
         len[i] = titlesTitle[i].innerHTML.length;
-        console.log(titlesTitle[i].innerHTML, len[i]);
+        if (debug)
+        {
+            console.log(titlesTitle[i].innerHTML, len[i]);
+        }
         stringArr[i] = titlesTitle[i].innerHTML;
         if (col === undefined) {
             $(function () {
                 col = $(titlesTitle[0]).css("color");
-                console.log("origin color :", col);
+                if (debug)
+                {
+                    console.log("origin color :", col);
+                }
                 stringCSS = "                             \
             bdi.btr_title:hover,bdi.btr_title:focus     \
             {                                         \
@@ -388,22 +488,34 @@ function FindBrac(l, sArr, tTitle, lengthOfIndexes) {
 function ChangeString(l, sArr, tTitle, amount) {
     arrBeg = GetAllIndexes(sArr, "[", "(");
     arrEnd = GetAllIndexes(sArr, "]", ")");
-    console.log("*str of brackets :", arrBeg);
-    console.log("*end of brackets :", arrEnd);
+    if (debug)
+    {
+        console.log("*str of brackets :", arrBeg);
+        console.log("*end of brackets :", arrEnd);
+    }
     if (amount === 0) {
         string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
-        console.info(string);
+        if (debug)
+        {
+            console.info(string);
+        }
         tTitle.innerHTML = string;
         return;
     }
-    if (amount === 1) {
-        console.log("*words in brackets :", sArr.substring(arrBeg[0], arrEnd[0] + 1));
-
+    if (amount === 1)
+    {
+        if (debug)
+        {
+            console.log("*words in brackets :", sArr.substring(arrBeg[0], arrEnd[0] + 1));
+        }
         //IF WHOLE TITLE IN BRACKETS
         if (arrBeg[0] <= 2 && arrEnd[0] >= l - 2)
         {
             string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
-            console.info(string);
+            if (debug)
+            {
+                console.info(string);
+            }
             tTitle.innerHTML = string;
             return;
         }
@@ -411,18 +523,27 @@ function ChangeString(l, sArr, tTitle, amount) {
         if (arrBeg[0] <= 2)
         {
             string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, l) + ' ' + stringEndbdi;
-            console.info(string);
+            if (debug)
+            {
+                console.info(string);
+            }
             tTitle.innerHTML = string;
             return;
         } else if (arrEnd[0] >= l - 2) {
             string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], l);
-            console.info(string);
+            if (debug)
+            {
+                console.info(string);
+            }
             tTitle.innerHTML = string;
             return;
         } else
         {
             string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, l) + ' ' + stringEndbdi;
-            console.info(string);
+            if (debug)
+            {
+                console.info(string);
+            }
             tTitle.innerHTML = string;
             return;
         }
@@ -434,13 +555,18 @@ function ChangeString(l, sArr, tTitle, amount) {
         for (a = 0; a < arrBeg.length; a++) {
             s += sArr.substring(arrBeg[a], arrEnd[a] + 1) + ' ';
         }
-        console.log("*words in brackets :", s);
-
+        if (debug)
+        {
+            console.log("*words in brackets :", s);
+        }
         //IF WHOLE TITLE IN BRACKETS
         if ((arrBeg[0] <= 2 && arrEnd[0] >= l - 2) || (arrBeg[1] <= 2 && arrEnd[1] >= l - 2))
         {
             string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
-            console.info(string);
+            if (debug)
+            {
+                console.info(string);
+            }
             tTitle.innerHTML = string;
             return;
         }
@@ -449,35 +575,53 @@ function ChangeString(l, sArr, tTitle, amount) {
             if (arrEnd[0] + 4 > arrBeg[1])
             {
                 string = sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, l) + ' ' + stringEndbdi;
-                console.info(string);
+                if (debug)
+                {
+                    console.info(string);
+                }
                 tTitle.innerHTML = string;
                 return;
             } else if (arrEnd[1] >= l - 2) {
                 string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], l);
-                console.info(string);
+                if (debug)
+                {
+                    console.info(string);
+                }
                 tTitle.innerHTML = string;
                 return;
             } else
             {
                 string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, l) + ' ' + stringEndbdi;
-                console.info(string);
+                if (debug)
+                {
+                    console.info(string);
+                }
                 tTitle.innerHTML = string;
                 return;
             }
         } else if (arrEnd[1] >= l - 2) {
             if (arrBeg[1] - 4 < arrEnd[0]) {
                 string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], l);
-                console.info(string);
+                if (debug)
+                {
+                    console.info(string);
+                }
                 tTitle.innerHTML = string;
                 return;
             } else if (arrBeg[0] <= 2) {
                 string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], l);
-                console.info(string);
+                if (debug)
+                {
+                    console.info(string);
+                }
                 tTitle.innerHTML = string;
                 return;
             } else {
                 string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], l);
-                console.info(string);
+                if (debug)
+                {
+                    console.info(string);
+                }
                 tTitle.innerHTML = string;
                 return;
             }
@@ -485,12 +629,18 @@ function ChangeString(l, sArr, tTitle, amount) {
         {
             if (arrEnd[0] + 3 >= arrBeg[1]) {
                 string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, l) + ' ' + stringEndbdi;
-                console.info(string);
+                if (debug)
+                {
+                    console.info(string);
+                }
                 tTitle.innerHTML = string;
                 return;
             } else {
                 string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, l) + ' ' + stringEndbdi;
-                console.info(string);
+                if (debug)
+                {
+                    console.info(string);
+                }
                 tTitle.innerHTML = string;
                 return;
             }

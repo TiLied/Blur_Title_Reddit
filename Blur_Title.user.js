@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.2.09
+// @version     0.2.10
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -68,7 +68,6 @@ function Main()
 {
 
     console.log("Blur Title Reddit v" + GM_info.script.version + " Initialized");
-
     SetCSS();
 
     //$(document).ready(function () {
@@ -120,8 +119,14 @@ function HasValue(nameVal, optValue)
 
     if (vals.length === 0)
     {
-        GM_setValue(nameVal, optValue);
-        return true;
+        if (optValue != undefined)
+        {
+            GM_setValue(nameVal, optValue);
+            return true;
+        } else
+        {
+            return false;
+        }
     }
 
     for (var i = 0; i < vals.length; i++)
@@ -136,6 +141,9 @@ function HasValue(nameVal, optValue)
     {
         GM_setValue(nameVal, optValue);
         return true;
+    } else
+    {
+        return false;
     }
 }
 

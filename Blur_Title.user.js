@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.2.10
+// @version     0.3.00
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -26,7 +26,9 @@
 var titles = document.querySelectorAll("a.title"),
     titlesDivO = document.querySelectorAll("div.spoiler"),
     stringStartbdi = '<bdi class = "btr_main btr_title btr_trans">',
-    stringEndbdi = '</bdi>';
+    stringEndbdi = '</bdi>',
+    oneSecond = 1000,
+    oldLength = titlesDivO.length;
 
 //empty val
 var res,
@@ -66,13 +68,23 @@ Main();
   
 function Main()
 {
-
     console.log("Blur Title Reddit v" + GM_info.script.version + " Initialized");
     SetCSS();
 
-    //$(document).ready(function () {
-      //  CheckRES();
-    //});
+    $(document).ready(function ()
+    {
+        window.onscroll = function (ev)
+        {
+            if ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight)
+            {
+                UpdateDivs();
+            }
+        };
+
+        CheckRES();
+    });
+
+
 
     //Menu Monkey Command
     GM_registerMenuCommand("Show Settings Blur Title Reddit", MenuCommand);
@@ -224,13 +236,15 @@ function CheckRES()
                                             {
                                                 console.log($(".neverEndingReddit"));
                                             }
-                                            if ($(".neverEndingReddit").length === 0) {
+                                            if ($(".neverEndingReddit").length === 0)
+                                            {
+                                                res = false;
                                                 return;
                                             } else {
                                                 SearchForNER();
                                                 return;
                                             }
-                                        }, 7000);
+                                        }, 4500);
                                     } else {
                                         SearchForNER();
                                         return;
@@ -250,6 +264,10 @@ function CheckRES()
                 return;
             }
             //console.log("Check current RES : " + res[0]);
+        } else
+        {
+            SearchForNER();
+            return;
         }
     //console.log("Check current RES : " + res[0]);
 }
@@ -262,10 +280,19 @@ function SearchForNER()
         console.log("Check current RES : " + res);
     }
     $(".neverEndingReddit").on("click", function () {
-        alert("Settings has been changed. Now brackets hiding.");
+        //alert("Settings has been changed. Now brackets hiding.");
+        TimeOut(oneSecond, function ()
+        {
+            UpdateDivs();
+            CheckRES();
+        });
     });
 }
 
+function TimeOut(baseNumber, func)
+{
+    setTimeout(func, baseNumber);
+}
 
 //UI FOR SETTINGS
 function OptionsUI()
@@ -405,6 +432,60 @@ function OptionsUI()
 
 }
 
+function UpdateDivs()
+{
+    titlesDivO = document.querySelectorAll("div.spoiler");
+    if (titlesDivO.length > oldLength)
+    {
+        console.log(titlesDivO);
+        for (i = 0; i < titlesDivO.length; i++)
+        {
+            titlesDiv[i] = titlesDivO[i];
+        }
+        console.log(titlesDiv);
+        for (i = 0; i < titlesDiv.length; i++)
+        {
+            if (titlesDiv[i].querySelector("div.entry.unvoted"))
+            {
+                titlesTitle[i] = titlesDiv[i].querySelector("div.entry.unvoted").querySelector("p.title").querySelector("a.title");
+                if (i >= oldLength)
+                {
+                    originStrings.push(titlesTitle[i].innerHTML);
+                   // originStrings[i] = titlesTitle[i].innerHTML;
+                }
+            } else
+            {
+                titlesTitle[i] = titlesDiv[i].querySelector("div.entry").querySelector("p.title").querySelector("a.title");
+                if (i >= oldLength)
+                {
+                    originStrings.push(titlesTitle[i].innerHTML);
+                    // originStrings[i] = titlesTitle[i].innerHTML;
+                }
+            }
+        }
+        if (debug)
+        {
+            console.log(originStrings);
+        }
+        oldLength = titlesDivO.length;
+        MyFunction();
+    } else
+    {
+        if (res)
+        {
+            TimeOut(oneSecond, function ()
+            {
+                UpdateDivs();
+                CheckRES();
+            });
+        } else
+        {
+            return;
+        }
+    }
+
+}
+
 function MyFunction() {
     if (titlesTitle.length === 0) {
         for (i = 0; i < titlesDiv.length; i++) {
@@ -425,6 +506,10 @@ function MyFunction() {
             console.log(titlesTitle[i].innerHTML, len[i]);
         }
         stringArr[i] = titlesTitle[i].innerHTML;
+        if (stringArr[i].toString().search(stringStartbdi))
+        {
+            stringArr[i] = originStrings[i];
+        }
         if (col === undefined) {
             $(function () {
                 col = $(titlesTitle[0]).css("color");
@@ -685,8 +770,7 @@ function MenuCommand() {
     2)Made it exclude of users, mean that post of their users WILL NOT bluring, Partial done(array) in 0.0.0.08
     3)Make it exclude of linkflairs, because every subreddit has its own flair its hard ***RESEARCH NEEDED***
      3.1)Some subreddits has own spoiler-flair, which can be good to blur, because they don't use buildin in reddit
-    4)Support RES ***RESEARCH NEEDED*** NOPE NOPE NOPE 
-     4.1)Or similar infinite reddit ***RESEARCH NEEDED***
+✓     4.1)Or similar infinite reddit ***RESEARCH NEEDED*** I think this too     //DONE 0.3.00
 ✓    5)Support Chrome    //DONE 0.0.08    
     6)Make it different colors(if used, like in r/anime rewatch is blue and discussion are red) in css trough css [href=] or id # 
 ✓    7)Make it proporly edentity everything in brackets   //DONE 0.0.07                                                                           

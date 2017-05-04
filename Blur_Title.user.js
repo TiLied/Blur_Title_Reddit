@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.3.00
+// @version     0.3.01
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -118,6 +118,20 @@ function SetSettings()
     {
         debug = GM_getValue("debug");
     }
+
+    //Console log prefs with value
+    console.log("*prefs:");
+    console.log("*-----*");
+    var vals = [];
+    for (var i = 0; i < GM_listValues().length; i++)
+    {
+        vals[i] = GM_listValues()[i];
+    }
+    for (var i = 0; i < vals.length; i++)
+    {
+        console.log("*" + vals[i] + ":" + GM_getValue(vals[i]));
+    }
+    console.log("*-----*");
 }
 
 //Check if value exists or not.  optValue = Optional
@@ -209,6 +223,10 @@ function SetCSS()
 //Check  Reddit Enhancement Suite
 function CheckRES()
 {
+    if (debug)
+    {
+        console.log("CHECK RES/NER:");
+    }
         if ($(".neverEndingReddit").length === 0) {
             if (debug)
             {
@@ -289,6 +307,7 @@ function SearchForNER()
     });
 }
 
+//DO NOT ASK ME WHY
 function TimeOut(baseNumber, func)
 {
     setTimeout(func, baseNumber);
@@ -770,6 +789,7 @@ function MenuCommand() {
     2)Made it exclude of users, mean that post of their users WILL NOT bluring, Partial done(array) in 0.0.0.08
     3)Make it exclude of linkflairs, because every subreddit has its own flair its hard ***RESEARCH NEEDED***
      3.1)Some subreddits has own spoiler-flair, which can be good to blur, because they don't use buildin in reddit
+✓    4)Support RES ***RESEARCH NEEDED*** NOPE NOPE NOPE, OMG        //DONE 0.3.00
 ✓     4.1)Or similar infinite reddit ***RESEARCH NEEDED*** I think this too     //DONE 0.3.00
 ✓    5)Support Chrome    //DONE 0.0.08    
     6)Make it different colors(if used, like in r/anime rewatch is blue and discussion are red) in css trough css [href=] or id # 
@@ -791,5 +811,6 @@ function MenuCommand() {
      13.2)Make it add users
 ✓     13.3)Make it a bit different opening settings(not as a button)    //DONE 0.2.00  
      13.4)Make settings per subreddit??? probably not
-✓     13.5)Make it show settings through Menu Monkey    //DONE 0.2.02  
+✓     13.5)Make it show settings through Menu Monkey    //DONE 0.2.02
+     13.6)Make it option to exclude, what between **, because some people dont use brackets
 TODO ENDS */

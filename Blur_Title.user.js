@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.3.01
+// @version     0.3.02
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -27,15 +27,13 @@ var titles = document.querySelectorAll("a.title"),
     titlesDivO = document.querySelectorAll("div.spoiler"),
     stringStartbdi = '<bdi class = "btr_main btr_title btr_trans">',
     stringEndbdi = '</bdi>',
-    oneSecond = 1000,
-    oldLength = titlesDivO.length;
+    oneSecond = 1000;
 
 //empty val
 var res,
     currentLocation,
     string,
     stringCSS,
-    i,
     firstB,
     lastB,
     col,
@@ -92,14 +90,13 @@ function Main()
     if (titlesDivO.length != 0) {
         console.log(titlesDivO);
         //titlesDiv[1].parentNode.removeChild(titlesDiv[1]);
-        for (i = 0; i < titlesDivO.length; i++) {
+        for (var i = 0; i < titlesDivO.length; i++) {
             titlesDiv[i] = titlesDivO[i];
         }
         console.log(titlesDiv);
-
-        SetSettings();
         MyFunction();
     }
+    SetSettings();
     OptionsUI();
     //console.log(GM_listValues());
 }
@@ -226,6 +223,7 @@ function CheckRES()
     if (debug)
     {
         console.log("CHECK RES/NER:");
+        console.group();
     }
         if ($(".neverEndingReddit").length === 0) {
             if (debug)
@@ -253,6 +251,7 @@ function CheckRES()
                                             if (debug)
                                             {
                                                 console.log($(".neverEndingReddit"));
+                                                console.groupEnd();
                                             }
                                             if ($(".neverEndingReddit").length === 0)
                                             {
@@ -344,7 +343,7 @@ function OptionsUI()
     //");
 
     settingsDiv = $("<div id=btrSettings class=side></div>").html("<div class=spaser><div class=sidecontentbox><span class=btr_closeButton>&times</span> \
-  <div class=title><h1>Settings of Blur Title Reddit</h1></div>\
+  <div class=title><h1>Settings of Blur Title Reddit " + GM_info.script.version + "</h1></div>\
   <ul class=content><li> \
   <form> \
   <br> \
@@ -453,16 +452,17 @@ function OptionsUI()
 
 function UpdateDivs()
 {
+    var oldLength = titlesDivO.length;
     titlesDivO = document.querySelectorAll("div.spoiler");
     if (titlesDivO.length > oldLength)
     {
         console.log(titlesDivO);
-        for (i = 0; i < titlesDivO.length; i++)
+        for (var i = 0; i < titlesDivO.length; i++)
         {
             titlesDiv[i] = titlesDivO[i];
         }
         console.log(titlesDiv);
-        for (i = 0; i < titlesDiv.length; i++)
+        for (var i = 0; i < titlesDiv.length; i++)
         {
             if (titlesDiv[i].querySelector("div.entry.unvoted"))
             {
@@ -507,7 +507,7 @@ function UpdateDivs()
 
 function MyFunction() {
     if (titlesTitle.length === 0) {
-        for (i = 0; i < titlesDiv.length; i++) {
+        for (var i = 0; i < titlesDiv.length; i++) {
             if (titlesDiv[i].querySelector("div.entry.unvoted")) {
                 titlesTitle[i] = titlesDiv[i].querySelector("div.entry.unvoted").querySelector("p.title").querySelector("a.title");
                 originStrings[i] = titlesTitle[i].innerHTML;
@@ -518,7 +518,7 @@ function MyFunction() {
         }
     }
 
-    for (i = 0; i < titlesDiv.length; i++) {
+    for (var i = 0; i < titlesDiv.length; i++) {
         len[i] = titlesTitle[i].innerHTML.length;
         if (debug)
         {
@@ -529,14 +529,17 @@ function MyFunction() {
         {
             stringArr[i] = originStrings[i];
         }
-        if (col === undefined) {
-            $(function () {
-                col = $(titlesTitle[0]).css("color");
-                if (debug)
-                {
-                    console.log("origin color :", col);
-                }
-                stringCSS = "                             \
+        if (col === undefined)
+        {
+            col = $(titlesTitle[0]).css("color");
+            if (debug)
+            {
+                console.log("-");
+                console.log("origin color :", col);
+                if (col === undefined) { console.log("true"); } else { console.log("false"); }
+                console.log("-");
+            }
+            stringCSS = "                             \
             bdi.btr_title:hover,bdi.btr_title:focus     \
             {                                         \
                 color:" + col + "!important;          \
@@ -545,11 +548,10 @@ function MyFunction() {
                 text-shadow:0 0.1px 0 #dcddce         \
             }                                         \
             ";
-                //console.log(stringCSS);
-                //GM_addStyle(stringCSS);
-                $("head").append($("<style type=text/css></style>").text(stringCSS));
-            });
-        }       
+            //console.log(stringCSS);
+            //GM_addStyle(stringCSS);
+            $("head").append($("<style type=text/css></style>").text(stringCSS));
+        }
         FindBracPref(len[i], stringArr[i], titlesTitle[i]);
         //console.log("array " + stringArr[i]);
     }
@@ -671,7 +673,7 @@ function ChangeString(l, sArr, tTitle, amount) {
         {
             console.log("*words in brackets :", s);
         }
-        //IF WHOLE TITLE IN BRACKETS
+        //IF WHOLE TITLE IN BRACKETS, NOT WORKING CORRECTLY TODO!
         if ((arrBeg[0] <= 2 && arrEnd[0] >= l - 2) || (arrBeg[1] <= 2 && arrEnd[1] >= l - 2))
         {
             string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
@@ -770,7 +772,7 @@ function GetAllIndexes(arr, val1, val2) {
 
 function ReplaceOriginalTitles()
 {
-    for (i = 0; i < titlesTitle.length; i++) {
+    for (var i = 0; i < titlesTitle.length; i++) {
         titlesTitle[i].innerHTML = originStrings[i];
     }
 }

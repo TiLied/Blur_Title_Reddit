@@ -283,6 +283,10 @@ function CheckRES()
             //console.log("Check current RES : " + res[0]);
         } else
         {
+        	if (debug)
+        	{
+        		console.groupEnd();
+        	}
             SearchForNER();
             return;
         }
@@ -759,6 +763,78 @@ function ChangeString(l, sArr, tTitle, amount) {
                 return;
             }
         }
+    }
+
+	//Three groups of brackets
+	//example sentence: "[spoiler1]_text1_[spoiler2]_text2_[spoiler3]"
+    if (amount === 3)
+    {
+    	var a;
+    	var s = '';
+    	for (a = 0; a < arrBeg.length; a++)
+    	{
+    		s += sArr.substring(arrBeg[a], arrEnd[a] + 1) + ' ';
+    	}
+    	if (debug)
+    	{
+    		console.log("*words in brackets :", s);
+    	}
+
+    	//IF WHOLE TITLE IN BRACKETS, NOT WORKING CORRECTLY TODO!
+    	if ((arrBeg[0] <= 2 && arrEnd[0] >= l - 2) || (arrBeg[1] <= 2 && arrEnd[1] >= l - 2) || (arrBeg[2] <= 2 && arrEnd[2] >= l - 2))
+    	{
+    		string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
+    		if (debug)
+    		{
+    			console.info(string);
+    		}
+    		tTitle.innerHTML = string;
+    		return;
+    	}
+
+    	//case one:"[spoiler1]..."
+    	if (arrBeg[0] <= 2)
+    	{
+    		//case one:one:"[spoiler1][spoiler2]..."
+    		if (arrEnd[0] + 4 > arrBeg[1])
+    		{
+    			//case one:one:one:"[spoiler1][spoiler2][spoiler3]_text"
+    			if (arrEnd[1] + 4 > arrBeg[2])
+    			{
+    				//"[spoiler1][spoiler2][spoiler3]<blur>text</blur>"
+    				string = sArr.substring(arrBeg[0], arrEnd[2] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[2] + 1, l) + ' ' + stringEndbdi;
+    				if (debug)
+    				{
+    					console.info(string);
+    				}
+    				tTitle.innerHTML = string;
+    				return;
+    			//case one:one:two:"[spoiler1][spoiler2]_text_[spoiler3]"
+    			} else if (arrEnd[2] >= l - 2)
+    			{
+    				//"[spoiler1][spoiler2]<blur>text</blur>[spoiler3]"
+    				string = sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], l);
+    				if (debug)
+    				{
+    					console.info(string);
+    				}
+    				tTitle.innerHTML = string;
+    				return;
+    			//case one:one:three:"[spoiler1][spoiler2]_text1_[spoiler3]_text2"
+    			} else
+    			{
+    				//"[spoiler1][spoiler2]<blur>text1</blur>[spoiler3]<blur>text2</blur>"
+    				string = sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], arrEnd[2] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[2] + 1, l) + ' ' + stringEndbdi;
+    				if (debug)
+    				{
+    					console.info(string);
+    				}
+    				tTitle.innerHTML = string;
+    				return;
+    			}
+    		}
+    	}
+
     }
 }
 

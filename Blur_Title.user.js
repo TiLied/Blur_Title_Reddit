@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.3.02
+// @version     0.4.00
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -878,6 +878,71 @@ function ChangeString(l, sArr, tTitle, amount) {
 				tTitle.innerHTML = string;
 				return;
 			}
+		//case two:"...[spoiler2]"
+		} else if (arrEnd[2] >= l - 2)
+		{
+			//case two:one:"...[spoiler1][spoiler2]"
+			if (arrEnd[1] + 4 > arrBeg[2])
+			{
+				//case two:one:one:"text_[spoiler0][spoiler1][spoiler2]"
+				if (arrEnd[0] + 4 > arrBeg[1])
+				{
+					//"<blur>text</blur>[spoiler0][spoiler1][spoiler2]"
+					string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], l);
+					if (debug)
+					{
+						console.info(string);
+					}
+					tTitle.innerHTML = string;
+					return;
+					//case two:one:one:"text1_[spoiler0]_text2_[spoiler1][spoiler2]"
+					//"[spoiler0]_text_[spoiler1][spoiler2]":NEVER HAPPEND
+				} else
+				{
+					//"<blur>text1</blur>[spoiler0]<blur>text2</blur>[spoiler1][spoiler2]"
+					string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrEnd[1] + 1, l);
+					if (debug)
+					{
+						console.info(string);
+					}
+					tTitle.innerHTML = string;
+					return;
+				}
+				//case two:two:"text1_[spoiler0][spoiler1]_text2_[spoiler2]"
+			} else if (arrEnd[0] + 4 > arrBeg[1])
+			{
+				//"<blur>text1</blur>[spoiler0][spoiler1]<blur>text2</blur>[spoiler2]"
+				string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrEnd[2] + 1, l);
+				if (debug)
+				{
+					console.info(string);
+				}
+				tTitle.innerHTML = string;
+				return;
+				//case two:two:"text1_[spoiler0]_text2_[spoiler1]_text3_[spoiler2]"
+			} else
+			{
+				//"<blur>text1</blur>[spoiler0]<blur>text2</blur>[spoiler1]<blur>text3</blur>[spoiler2]"
+				string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], l);
+				if (debug)
+				{
+					console.info(string);
+				}
+				tTitle.innerHTML = string;
+				return;
+			}
+		//case three:"text1_[spoiler0]_text2_[spoiler1]_text3_[spoiler2]_text4"
+		//DO I NEED ALL CASES??? TODO!
+		} else
+		{
+			//"<blur>text1</blur>[spoiler0]<blur>text2</blur>[spoiler1]<blur>text3</blur>[spoiler2]<blur>text4</blur>"
+			string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], arrEnd[2] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[2] + 1, l) + ' ' + stringEndbdi;
+			if (debug)
+			{
+				console.info(string);
+			}
+			tTitle.innerHTML = string;
+			return;
 		}
 
 	}
@@ -908,16 +973,17 @@ function MenuCommand() {
 // ------------
 
 /* TODO STARTS
-✓    1)Rewrite everything in Jquery ***RESEARCH NEEDED*** by this mean delete GM_addstyle //DONE 0.2.05
+✓	 1)Rewrite everything in Jquery ***RESEARCH NEEDED*** by this mean delete GM_addstyle //DONE 0.2.05
 	2)Made it exclude of users, mean that post of their users WILL NOT bluring, Partial done(array) in 0.0.0.08
 	3)Make it exclude of linkflairs, because every subreddit has its own flair its hard ***RESEARCH NEEDED***
 	 3.1)Some subreddits has own spoiler-flair, which can be good to blur, because they don't use buildin in reddit
-✓    4)Support RES ***RESEARCH NEEDED*** NOPE NOPE NOPE, OMG        //DONE 0.3.00
-✓     4.1)Or similar infinite reddit ***RESEARCH NEEDED*** I think this too     //DONE 0.3.00
-✓    5)Support Chrome    //DONE 0.0.08    
+✓	 4)Support RES ***RESEARCH NEEDED*** NOPE NOPE NOPE, OMG        //DONE 0.3.00
+✓	  4.1)Or similar infinite reddit ***RESEARCH NEEDED*** I think this too     //DONE 0.3.00
+✓	 5)Support Chrome    //DONE 0.0.08    
 	6)Make it different colors(if used, like in r/anime rewatch is blue and discussion are red) in css trough css [href=] or id # 
-✓    7)Make it proporly edentity everything in brackets   //DONE 0.0.07                                                                           
-	 7.1)Make it blur title which have more then 3 groups of brackets
+✓	 7)Make it proporly edentity everything in brackets   //DONE 0.0.07                                                                           
+✓	  7.1)Make it blur title which have more then 3 groups of brackets	//DONE 0.4.00
+	   7.1.1)Do I need 4 group of brackets? its pretty rare when title has 3 groups of brackets.
 	 7.2)Exclude some brackets which have text like 2011, jan 2007, etc. probably specific subreddit only
 	8)What it make that if you clicked on post which are blurry WILL NOT going to blurry again ***RESEARCH NEEDED***
 	 8.1)What it remember color after you clicked ***RESEARCH NEEDED***

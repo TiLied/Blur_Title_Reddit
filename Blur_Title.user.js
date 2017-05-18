@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.4.00
+// @version     0.4.01
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -595,7 +595,7 @@ function FindBrac(l, sArr, tTitle, lengthOfIndexes) {
 			ChangeString(l, sArr, tTitle, 2);
 			break;
 		case 3:
-			ChangeString(l, sArr, tTitle, 1); //TODO 3
+			ChangeString(l, sArr, tTitle, 3);
 			break;
 		case 4:
 			ChangeString(l, sArr, tTitle, 1); //TODO 4

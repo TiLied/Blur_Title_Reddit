@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.4.01
+// @version     0.4.02
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -24,8 +24,10 @@
 
 //not empty val
 var titles = document.querySelectorAll("a.title"),
-	titlesDivO = document.querySelectorAll("div.spoiler"),
-	stringStartbdi = '<bdi class = "btr_main btr_title btr_trans">',
+	titlesDivO = document.querySelectorAll("div.spoiler");
+
+//const
+const stringStartbdi = '<bdi class = "btr_main btr_title btr_trans">',
 	stringEndbdi = '</bdi>',
 	oneSecond = 1000;
 
@@ -68,6 +70,9 @@ function Main()
 {
 	console.log("Blur Title Reddit v" + GM_info.script.version + " Initialized");
 	SetCSS();
+	SetSettings();
+	//Menu Monkey Command
+	GM_registerMenuCommand("Show Settings Blur Title Reddit", MenuCommand);
 
 	$(document).ready(function ()
 	{
@@ -82,11 +87,6 @@ function Main()
 		CheckRES();
 	});
 
-
-
-	//Menu Monkey Command
-	GM_registerMenuCommand("Show Settings Blur Title Reddit", MenuCommand);
-
 	if (titlesDivO.length != 0) {
 		console.log(titlesDivO);
 		//titlesDiv[1].parentNode.removeChild(titlesDiv[1]);
@@ -96,14 +96,16 @@ function Main()
 		console.log(titlesDiv);
 		MyFunction();
 	}
-	SetSettings();
+
 	OptionsUI();
-	//console.log(GM_listValues());
 }
 
 //set settings
 function SetSettings()
 {
+	//Delete old values
+	DeleteValues("old");
+
 	//THIS IS ABOUT TITLE
 	if (HasValue("btr_GMTitle", false))
 	{
@@ -111,9 +113,9 @@ function SetSettings()
 	}
 
 	//THIS IS ABOUT DEBUG
-	if (HasValue("debug", false))
+	if (HasValue("btr_debug", false))
 	{
-		debug = GM_getValue("debug");
+		debug = GM_getValue("btr_debug");
 	}
 
 	//THIS IS ABOUT USERS
@@ -158,6 +160,11 @@ function HasValue(nameVal, optValue)
 		}
 	}
 
+	if (typeof nameVal != "string")
+	{
+		return alert("name of value: '" + nameVal + "' are not string");
+	}
+
 	for (var i = 0; i < vals.length; i++)
 	{
 		if (vals[i] === nameVal)
@@ -173,6 +180,49 @@ function HasValue(nameVal, optValue)
 	} else
 	{
 		return false;
+	}
+}
+
+//Delete Values
+function DeleteValues(nameVal)
+{
+	var vals = [];
+	for (var i = 0; i < GM_listValues().length; i++)
+	{
+		vals[i] = GM_listValues()[i];
+	}
+
+	if (vals.length === 0 || typeof nameVal != "string")
+	{
+		return;
+	}
+
+	switch(nameVal)
+	{
+		case "all":
+			for (var i = 0; i < vals.length; i++)
+			{
+				GM_deleteValue(vals[i]);
+			}
+			break;
+		case "old":
+			for (var i = 0; i < vals.length; i++)
+			{
+				if (vals[i] === "debug" || vals[i] === "debugA")
+				{
+					GM_deleteValue(vals[i]);
+				}
+			}
+			break;
+		default:
+			for (var i = 0; i < vals.length; i++)
+			{
+				if (vals[i] === nameVal)
+				{
+					GM_deleteValue(nameVal);
+				}
+			}
+			break;
 	}
 }
 
@@ -289,11 +339,11 @@ function CheckRES()
 			//console.log("Check current RES : " + res[0]);
 		} else
 		{
+			SearchForNER();
 			if (debug)
 			{
 				console.groupEnd();
 			}
-			SearchForNER();
 			return;
 		}
 	//console.log("Check current RES : " + res[0]);
@@ -396,18 +446,18 @@ function OptionsUI()
 	{
 		if (debug === true)
 		{
-			GM_setValue("debug", false);
-			debug = GM_getValue("debug");
+			GM_setValue("btr_debug", false);
+			debug = GM_getValue("btr_debug");
 		} else
 		{
-			GM_setValue("debug", true);
-			debug = GM_getValue("debug");
+			GM_setValue("btr_debug", true);
+			debug = GM_getValue("btr_debug");
 		}
 
 		confirm("Settings has been changed.");
 		if (debug)
 		{
-			console.log('debug: ' + GM_getValue("debug") + ' and debug: ' + debug);
+			console.log('debug: ' + GM_getValue("btr_debug") + ' and debug: ' + debug);
 		}
 	});
 	$("#btr_showTitle").change(function () {
@@ -546,6 +596,8 @@ function MyFunction() {
 			{
 				console.log("-");
 				console.log("origin color :", col);
+				//var asd = $(titlesTitle[0]); document.styleSheets[0]
+				//console.log("visited color :", document.styleSheets[0]);
 				if (col === undefined) { console.log("true"); } else { console.log("false"); }
 				console.log("-");
 			}

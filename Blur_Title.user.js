@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.4.02
+// @version     0.4.03
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -38,9 +38,7 @@ var res,
 	stringCSS,
 	firstB,
 	lastB,
-	col,
-	lengthOfIndexes,
-	settingsDiv;
+	lengthOfIndexes;
 
 //arrays
 var titlesDiv = [],
@@ -69,16 +67,18 @@ Main();
 function Main()
 {
 	console.log("Blur Title Reddit v" + GM_info.script.version + " Initialized");
+	//Place css in <head>
 	SetCSS();
+	//Check settings or create them
 	SetSettings();
 	//Menu Monkey Command
 	GM_registerMenuCommand("Show Settings Blur Title Reddit", MenuCommand);
-
+	//Track scroll for infinite reddit
 	$(document).ready(function ()
 	{
 		window.onscroll = function (ev)
 		{
-			if ((window.innerHeight + window.pageYOffset) >= document.body.offsetHeight)
+			if ((window.innerHeight + window.pageYOffset) >= document.getElementById("siteTable").scrollHeight)
 			{
 				UpdateDivs();
 			}
@@ -86,17 +86,16 @@ function Main()
 
 		CheckRES();
 	});
-
+	//Start function on bluring titles
 	if (titlesDivO.length != 0) {
 		console.log(titlesDivO);
-		//titlesDiv[1].parentNode.removeChild(titlesDiv[1]);
 		for (var i = 0; i < titlesDivO.length; i++) {
 			titlesDiv[i] = titlesDivO[i];
 		}
 		console.log(titlesDiv);
 		MyFunction();
 	}
-
+	//Set UI of settings
 	OptionsUI();
 }
 
@@ -229,6 +228,18 @@ function DeleteValues(nameVal)
 //css
 function SetCSS()
 {
+
+	$("head").append($("<!--Start of Blur Title Reddit v" + GM_info.script.version + " CSS-->"));
+
+	$("head").append($("<style type=text/css></style>").text("bdi.btr_title:hover \
+	{                                         \
+		color:inherit!important;          \
+		background:transparent!important;     \
+		text-decoration:none!important;       \
+		text-shadow:0 0.1px 0 #dcddce         \
+	}                                         \
+			"));
+
 	$("head").append($("<style type=text/css></style>").text(" bdi.btr_title   { \
 	   color:rgba(255,60,231,0) !important;        \
 	   text-shadow: 0px 0px 1em black;               \
@@ -271,6 +282,12 @@ function SetCSS()
 	   overflow: visible !important;         \
 	}                                         \
 	"));
+
+	$("head").append($("<style type=text/css></style>").text("div.btr_opt { \
+	position: fixed; bottom: 0; right: 0; border: 0; \
+	}"));
+
+	$("head").append($("<!--End of Blur Title Reddit v" + GM_info.script.version + " CSS-->"));
 }
 
 //Check  Reddit Enhancement Suite
@@ -322,7 +339,7 @@ function CheckRES()
 										SearchForNER();
 										return;
 									}                              
-							}, 3000);
+							}, 2000);
 						} else {
 							SearchForNER();
 							return;
@@ -375,6 +392,7 @@ function TimeOut(baseNumber, func)
 //UI FOR SETTINGS
 function OptionsUI()
 {
+	//DO I NEED THIS COMMENTS?????????????
 //    $("head").append($("<style type=text/css></style>").text("div.btr_opt { \
 //    height: 300px; \
 //    width: 300px;\
@@ -386,9 +404,9 @@ function OptionsUI()
 //    border: 1px solid #AAA;\
 //    overflow: scroll;\
 	//}"));
-	$("head").append($("<style type=text/css></style>").text("div.btr_opt { \
-	position: fixed; bottom: 0; right: 0; border: 0; \
-}"));
+//	$("head").append($("<style type=text/css></style>").text("div.btr_opt { \
+//	position: fixed; bottom: 0; right: 0; border: 0; \
+//}"));
 	//var t = document.createTextNode("btr_opt {font: 20px verdana;}");
 	//x.appendChild(t);
 	//document.head.appendChild(x);
@@ -402,7 +420,7 @@ function OptionsUI()
   //<button id=btr_hide>Hide Settings</button> \
 	//");
 
-	settingsDiv = $("<div id=btrSettings class=side></div>").html("<div class=spaser><div class=sidecontentbox><span class=btr_closeButton>&times</span> \
+	const settingsDiv = $("<div id=btrSettings class=side></div>").html("<div class=spaser><div class=sidecontentbox><span class=btr_closeButton>&times</span> \
   <div class=title><h1>Settings of Blur Title Reddit " + GM_info.script.version + "</h1></div>\
   <ul class=content><li> \
   <form> \
@@ -588,31 +606,6 @@ function MyFunction() {
 		if (stringArr[i].toString().search(stringStartbdi))
 		{
 			stringArr[i] = originStrings[i];
-		}
-		if (col === undefined)
-		{
-			col = $(titlesTitle[0]).css("color");
-			if (debug)
-			{
-				console.log("-");
-				console.log("origin color :", col);
-				//var asd = $(titlesTitle[0]); document.styleSheets[0]
-				//console.log("visited color :", document.styleSheets[0]);
-				if (col === undefined) { console.log("true"); } else { console.log("false"); }
-				console.log("-");
-			}
-			stringCSS = "                             \
-			bdi.btr_title:hover,bdi.btr_title:focus     \
-			{                                         \
-				color:" + col + "!important;          \
-				background:transparent!important;     \
-				text-decoration:none!important;       \
-				text-shadow:0 0.1px 0 #dcddce         \
-			}                                         \
-			";
-			//console.log(stringCSS);
-			//GM_addStyle(stringCSS);
-			$("head").append($("<style type=text/css></style>").text(stringCSS));
 		}
 		FindBracPref(len[i], stringArr[i], titlesTitle[i]);
 		//console.log("array " + stringArr[i]);
@@ -1032,13 +1025,14 @@ function MenuCommand() {
 ✓	 4)Support RES ***RESEARCH NEEDED*** NOPE NOPE NOPE, OMG        //DONE 0.3.00
 ✓	  4.1)Or similar infinite reddit ***RESEARCH NEEDED*** I think this too     //DONE 0.3.00
 ✓	 5)Support Chrome    //DONE 0.0.08    
-	6)Make it different colors(if used, like in r/anime rewatch is blue and discussion are red) in css trough css [href=] or id # 
+✓	 6)Make it different colors(if used, like in r/anime rewatch is blue and discussion are red) in css trough css [href=] or id #  that was easy	//DONE 0.4.03 
 ✓	 7)Make it proporly edentity everything in brackets   //DONE 0.0.07                                                                           
 ✓	  7.1)Make it blur title which have more then 3 groups of brackets	//DONE 0.4.00
 	   7.1.1)Do I need 4 group of brackets? its pretty rare when title has 3 groups of brackets.
 	 7.2)Exclude some brackets which have text like 2011, jan 2007, etc. probably specific subreddit only
 	8)What it make that if you clicked on post which are blurry WILL NOT going to blurry again ***RESEARCH NEEDED***
-	 8.1)What it remember color after you clicked ***RESEARCH NEEDED***
+✓	 8.1)What it remember color after you clicked ***RESEARCH NEEDED***		a bit meh	//DONE 0.4.03
+		8.1.1)Can i find fix for this? ***RESEARCH NEEDED***
 	9)Make it if brackets in the middle should unblury two or more part, dont know how currently ***RESEARCH NEEDED***
 	10)Want it if title whithout brackets but has name of anime, show etc. blur everything exclude NAME, its hard
 ✓    11)Add if title(Somehow)... full title in brackets, forced blur anyway      //DONE 0.2.08 

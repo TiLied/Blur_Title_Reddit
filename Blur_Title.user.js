@@ -53,6 +53,7 @@ var titlesDiv = [],
 //prefs
 var btr_pTitle,
 	btr_pUsers,
+	asterisk,
 	debug;
 
 
@@ -105,16 +106,22 @@ function SetSettings()
 	//Delete old values
 	DeleteValues("old");
 
+	//THIS IS ABOUT DEBUG
+	if (HasValue("btr_debug", false))
+	{
+		debug = GM_getValue("btr_debug");
+	}
+
 	//THIS IS ABOUT TITLE
 	if (HasValue("btr_GMTitle", false))
 	{
 		btr_pTitle = GM_getValue("btr_GMTitle");
 	}
 
-	//THIS IS ABOUT DEBUG
-	if (HasValue("btr_debug", false))
+	//THIS IS ABOUT asterisk
+	if (HasValue("btr_asterisk", false))
 	{
-		debug = GM_getValue("btr_debug");
+		asterisk = GM_getValue("btr_asterisk");
 	}
 
 	//THIS IS ABOUT USERS
@@ -392,34 +399,6 @@ function TimeOut(baseNumber, func)
 //UI FOR SETTINGS
 function OptionsUI()
 {
-	//DO I NEED THIS COMMENTS?????????????
-//    $("head").append($("<style type=text/css></style>").text("div.btr_opt { \
-//    height: 300px; \
-//    width: 300px;\
-//    background: #f0f0f0;\
-//    position: fixed; bottom: 0; right: 0; border: 0; \
-//    margin: 0px 5px 0px 5px;\
-//    padding: 10px 0px 10px 0px;\
-//    text-align: center;\
-//    border: 1px solid #AAA;\
-//    overflow: scroll;\
-	//}"));
-//	$("head").append($("<style type=text/css></style>").text("div.btr_opt { \
-//	position: fixed; bottom: 0; right: 0; border: 0; \
-//}"));
-	//var t = document.createTextNode("btr_opt {font: 20px verdana;}");
-	//x.appendChild(t);
-	//document.head.appendChild(x);
-
-  //  settingsDiv = $("<div id=btrSettings></div>").html("<h1>Settings of Blur Title Reddit</h1>\
-  //<form> \
-  //<br> \
-  //<p>Bluring option:</p>\
-  //" + check + " \
-  //</form> \
-  //<button id=btr_hide>Hide Settings</button> \
-	//");
-
 	const settingsDiv = $("<div id=btrSettings class=side></div>").html("<div class=spaser><div class=sidecontentbox><span class=btr_closeButton>&times</span> \
   <div class=title><h1>Settings of Blur Title Reddit " + GM_info.script.version + "</h1></div>\
   <ul class=content><li> \
@@ -428,6 +407,7 @@ function OptionsUI()
   <p>Bluring option:</p>\
   <input type=radio name=title id=btr_showTitle >Show brackets</input><br> \
   <input type=radio name=title id=btr_hideTitle >Hide brackets</input><br><br> \
+	<input type=checkbox name=asterisk id=asterisk >Show what between asterisks like brackets</input><br><br> \
   <input type=checkbox name=debug id=debug >Debug</input><br> \
   </form> <br> \
   <button id=btr_hide>Hide Settings</button></li></ul></div></div> \
@@ -439,13 +419,7 @@ function OptionsUI()
 
 	//console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
 	//console.log($("[name='title']")[1]);
-	if (debug === true)
-	{
-		$("#debug").prop("checked", true);
-	} else
-	{
-		$("#debug").prop("checked", false);
-	}
+	$("#debug").prop("checked", debug);
 
 	if (btr_pTitle === true)
 	{
@@ -993,11 +967,20 @@ function ChangeString(l, sArr, tTitle, amount) {
 	}
 }
 
+//second value can be "even" or "odd"
 function GetAllIndexes(arr, val1, val2) {
 	var indexes = [], x;
-	for (x = 0; x < arr.length; x++)
-		if (arr[x] === val1 || arr[x] === val2)
-			indexes.push(x);
+	switch (val2)
+	{
+		case "even":
+		case "odd":
+			break;
+		default:
+			for (x = 0; x < arr.length; x++)
+				if (arr[x] === val1 || arr[x] === val2)
+					indexes.push(x);
+			break;
+	}
 	return indexes;
 }
 

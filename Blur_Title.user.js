@@ -420,6 +420,7 @@ function OptionsUI()
 	//console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
 	//console.log($("[name='title']")[1]);
 	$("#debug").prop("checked", debug);
+	$("#asterisk").prop("checked", asterisk);
 
 	if (btr_pTitle === true)
 	{
@@ -452,6 +453,26 @@ function OptionsUI()
 			console.log('debug: ' + GM_getValue("btr_debug") + ' and debug: ' + debug);
 		}
 	});
+
+	$("#asterisk").change(function ()
+	{
+		if (asterisk === true)
+		{
+			GM_setValue("btr_asterisk", false);
+			asterisk = GM_getValue("btr_asterisk");
+		} else
+		{
+			GM_setValue("btr_asterisk", true);
+			asterisk = GM_getValue("btr_asterisk");
+		}
+
+		confirm("Settings has been changed.");
+		if (debug)
+		{
+			console.log('asterisk: ' + GM_getValue("btr_asterisk") + ' and asterisk: ' + asterisk);
+		}
+	});
+
 	$("#btr_showTitle").change(function () {
 		GM_setValue("btr_GMTitle", false);
 		btr_pTitle = GM_getValue("btr_GMTitle");
@@ -594,6 +615,12 @@ function FindBracPref(l, sArr, tTitle)
 		// console.log(GetAllIndexes(sArr, "[", "("));
 		lengthOfIndexes = 0;
 		FindBrac(l, sArr, tTitle, lengthOfIndexes);
+	} else if (asterisk === true)
+	{
+		// console.log(GetAllIndexes(sArr, "[", "("));
+		lengthOfIndexes = GetAllIndexes(sArr, "[", "(").length;
+		lengthOfIndexes += GetAllIndexes(sArr, "'", "even").length;
+		FindBrac(l, sArr, tTitle, lengthOfIndexes);
 	} else
 	{
 		// console.log(GetAllIndexes(sArr, "[", "("));
@@ -631,6 +658,18 @@ function FindBrac(l, sArr, tTitle, lengthOfIndexes) {
 function ChangeString(l, sArr, tTitle, amount) {
 	arrBeg = GetAllIndexes(sArr, "[", "(");
 	arrEnd = GetAllIndexes(sArr, "]", ")");
+
+	if (asterisk === true)
+	{
+		if (debug)
+		{
+			console.log("*1str of brackets :", arrBeg);
+			console.log("*1end of brackets :", arrEnd);
+		}
+		arrBeg.push(GetAllIndexes(sArr, "'", "even"));
+		arrEnd.push(GetAllIndexes(sArr, "'", "odd"));
+	}
+
 	if (debug)
 	{
 		console.log("*str of brackets :", arrBeg);
@@ -969,16 +1008,56 @@ function ChangeString(l, sArr, tTitle, amount) {
 
 //second value can be "even" or "odd"
 function GetAllIndexes(arr, val1, val2) {
-	var indexes = [], x;
+	var indexes = [], temp = [], x, i;
 	switch (val2)
 	{
 		case "even":
+			for (x = 0; x < arr.length; x++)
+				if (arr[x] === val1)
+					temp.push(x);
+			for (i = 0; i < temp.length; i++)
+			{
+				if (IsEven(i))
+				{
+					indexes.push(temp[i]);
+				}
+			}
+			if (debug)
+			{
+				console.log("evenTemp:");
+				console.log(temp);
+				console.log("evenindexes:");
+				console.log(indexes);
+			}
+			break;
 		case "odd":
+			for (x = 0; x < arr.length; x++)
+				if (arr[x] === val1)
+					temp.push(x);
+			for (i = 0; i < temp.length; i++)
+			{
+				if (!IsEven(i))
+				{
+					indexes.push(temp[i]);
+				}
+			}
+			if (debug)
+			{
+				console.log("oddTemp:");
+				console.log(temp);
+				console.log("oddindexes:");
+				console.log(indexes);
+			}
 			break;
 		default:
 			for (x = 0; x < arr.length; x++)
 				if (arr[x] === val1 || arr[x] === val2)
 					indexes.push(x);
+			if (debug)
+			{
+				console.log("indexes:");
+				console.log(indexes);
+			}
 			break;
 	}
 	return indexes;
@@ -994,6 +1073,11 @@ function ReplaceOriginalTitles()
 function MenuCommand() {
 	$("#btrSettings").show(1000);
 	$("#btrSettings").addClass("btr_opt");
+}
+
+function IsEven(n)
+{
+	return n == parseFloat(n) ? !(n % 2) : void 0;
 }
 
 // ------------

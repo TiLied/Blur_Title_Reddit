@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.4.03
+// @version     0.5.00
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -417,24 +417,22 @@ function OptionsUI()
 
 	$("body").append(settingsDiv);
 
-	//console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
-	//console.log($("[name='title']")[1]);
+	//SET UI SETTINGS
 	$("#debug").prop("checked", debug);
+
 	$("#asterisk").prop("checked", asterisk);
 
 	if (btr_pTitle === true)
 	{
 		$("#btr_hideTitle").prop("checked", true);
-		//$("btr_showTitle").prop("checked", false);
 	} else
 	{
 		$("#btr_showTitle").prop("checked", true);
-		//$("btr_hideTitle").prop("checked", false);
 	}
 
 	$("#btrSettings").hide();
-	//$("body").append($("<button type=button onclick=$(#btrSettings).show()>Click Me!</button>"));
-	//$("body").append("<button id=btr_hide>Hide</button>");
+
+	//CHANGE SETTINGS BY INTERACT WITH UI
 	$("#debug").change(function ()
 	{
 		if (debug === true)
@@ -469,7 +467,7 @@ function OptionsUI()
 		confirm("Settings has been changed.");
 		if (debug)
 		{
-			console.log('asterisk: ' + GM_getValue("btr_asterisk") + ' and asterisk: ' + asterisk);
+			console.log('btr_asterisk: ' + GM_getValue("btr_asterisk") + ' and asterisk: ' + asterisk);
 		}
 	});
 
@@ -484,6 +482,7 @@ function OptionsUI()
 			console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
 		}
 	});
+
 	$("#btr_hideTitle").change(function () {
 		GM_setValue("btr_GMTitle", true);
 		btr_pTitle = GM_getValue("btr_GMTitle");
@@ -617,13 +616,11 @@ function FindBracPref(l, sArr, tTitle)
 		FindBrac(l, sArr, tTitle, lengthOfIndexes);
 	} else if (asterisk === true)
 	{
-		// console.log(GetAllIndexes(sArr, "[", "("));
 		lengthOfIndexes = GetAllIndexes(sArr, "[", "(").length;
-		lengthOfIndexes += GetAllIndexes(sArr, "'", "even").length;
+		lengthOfIndexes += GetAllIndexes(sArr, "*", "even").length;
 		FindBrac(l, sArr, tTitle, lengthOfIndexes);
 	} else
 	{
-		// console.log(GetAllIndexes(sArr, "[", "("));
 		lengthOfIndexes = GetAllIndexes(sArr, "[", "(").length;
 		FindBrac(l, sArr, tTitle, lengthOfIndexes);
 	}
@@ -661,13 +658,8 @@ function ChangeString(l, sArr, tTitle, amount) {
 
 	if (asterisk === true)
 	{
-		if (debug)
-		{
-			console.log("*1str of brackets :", arrBeg);
-			console.log("*1end of brackets :", arrEnd);
-		}
-		arrBeg.push(GetAllIndexes(sArr, "'", "even"));
-		arrEnd.push(GetAllIndexes(sArr, "'", "odd"));
+		arrBeg = arrBeg.concat(GetAllIndexes(sArr, "*", "even"));
+		arrEnd = arrEnd.concat(GetAllIndexes(sArr, "*", "odd"));
 	}
 
 	if (debug)
@@ -675,6 +667,7 @@ function ChangeString(l, sArr, tTitle, amount) {
 		console.log("*str of brackets :", arrBeg);
 		console.log("*end of brackets :", arrEnd);
 	}
+
 	if (amount === 0) {
 		string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
 		if (debug)
@@ -684,6 +677,7 @@ function ChangeString(l, sArr, tTitle, amount) {
 		tTitle.innerHTML = string;
 		return;
 	}
+
 	if (amount === 1)
 	{
 		if (debug)
@@ -1022,13 +1016,6 @@ function GetAllIndexes(arr, val1, val2) {
 					indexes.push(temp[i]);
 				}
 			}
-			if (debug)
-			{
-				console.log("evenTemp:");
-				console.log(temp);
-				console.log("evenindexes:");
-				console.log(indexes);
-			}
 			break;
 		case "odd":
 			for (x = 0; x < arr.length; x++)
@@ -1041,23 +1028,11 @@ function GetAllIndexes(arr, val1, val2) {
 					indexes.push(temp[i]);
 				}
 			}
-			if (debug)
-			{
-				console.log("oddTemp:");
-				console.log(temp);
-				console.log("oddindexes:");
-				console.log(indexes);
-			}
 			break;
 		default:
 			for (x = 0; x < arr.length; x++)
 				if (arr[x] === val1 || arr[x] === val2)
 					indexes.push(x);
-			if (debug)
-			{
-				console.log("indexes:");
-				console.log(indexes);
-			}
 			break;
 	}
 	return indexes;
@@ -1105,14 +1080,14 @@ function IsEven(n)
 ✓    11)Add if title(Somehow)... full title in brackets, forced blur anyway      //DONE 0.2.08 
 	12)Make it work when searching
 	13)Make options ***RESEARCH NEEDED*** Partial done(array) in 0.0.0.09
-✓    13.0)UI     //DONE 0.1.00 
-✓        13.0.1)Make UI with style as subreddits    //DONE 0.2.00 
-			13.0.1.1)To many subreddits break style of settings(unusable etc.), will be removed... probably
-✓        13.0.2)Make it more clear UI   //DONE 0.2.00 
-✓    13.1)Make option to blur full title, no matter of brackets     //DONE 0.1.00 
-	 13.2)Make it add users
-✓     13.3)Make it a bit different opening settings(not as a button)    //DONE 0.2.00  
-	 13.4)Make settings per subreddit??? probably not
-✓     13.5)Make it show settings through Menu Monkey    //DONE 0.2.02
-	 13.6)Make it option to exclude, what between **, because some people dont use brackets
+✓   13.0)UI     //DONE 0.1.00 
+✓	  13.0.1)Make UI with style as subreddits    //DONE 0.2.00 
+	    13.0.1.1)To many subreddits break style of settings(unusable etc.), will be removed... probably
+✓	  13.0.2)Make it more clear UI   //DONE 0.2.00 
+✓   13.1)Make option to blur full title, no matter of brackets     //DONE 0.1.00 
+	13.2)Make it add users
+✓	 13.3)Make it a bit different opening settings(not as a button)    //DONE 0.2.00  
+	13.4)Make settings per subreddit??? probably not
+✓	 13.5)Make it show settings through Menu Monkey    //DONE 0.2.02
+✓	 13.6)Make it option to exclude, what between **, because some people do not use brackets	//DONE 0.5.00
 TODO ENDS */

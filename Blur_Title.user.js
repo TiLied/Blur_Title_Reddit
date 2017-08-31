@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.5.00
+// @version     0.5.01
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -88,9 +88,9 @@ function Main()
 		CheckRES();
 	});
 	//Start function on bluring titles
-	if (titlesDivO.length != 0) {
+	if (titlesDivO.length !== 0) {
 		console.log(titlesDivO);
-		for (var i = 0; i < titlesDivO.length; i++) {
+		for (let i = 0; i < titlesDivO.length; i++) {
 			titlesDiv[i] = titlesDivO[i];
 		}
 		console.log(titlesDiv);
@@ -134,11 +134,13 @@ function SetSettings()
 	console.log("*prefs:");
 	console.log("*-----*");
 	var vals = [];
-	for (var i = 0; i < GM_listValues().length; i++)
+
+	//Find out that var in for block is not local... Seriously js?
+	for (let i = 0; i < GM_listValues().length; i++)
 	{
 		vals[i] = GM_listValues()[i];
 	}
-	for (var i = 0; i < vals.length; i++)
+	for (let i = 0; i < vals.length; i++)
 	{
 		console.log("*" + vals[i] + ":" + GM_getValue(vals[i]));
 	}
@@ -149,14 +151,14 @@ function SetSettings()
 function HasValue(nameVal, optValue)
 {
 	var vals = [];
-	for (var i = 0; i < GM_listValues().length; i++)
+	for (let i = 0; i < GM_listValues().length; i++)
 	{
 		vals[i] = GM_listValues()[i];
 	}
 
 	if (vals.length === 0)
 	{
-		if (optValue != undefined)
+		if (optValue !== undefined)
 		{
 			GM_setValue(nameVal, optValue);
 			return true;
@@ -166,12 +168,12 @@ function HasValue(nameVal, optValue)
 		}
 	}
 
-	if (typeof nameVal != "string")
+	if (typeof nameVal !== "string")
 	{
 		return alert("name of value: '" + nameVal + "' are not string");
 	}
 
-	for (var i = 0; i < vals.length; i++)
+	for (let i = 0; i < vals.length; i++)
 	{
 		if (vals[i] === nameVal)
 		{
@@ -179,7 +181,7 @@ function HasValue(nameVal, optValue)
 		}
 	}
 
-	if (optValue != undefined)
+	if (optValue !== undefined)
 	{
 		GM_setValue(nameVal, optValue);
 		return true;
@@ -193,12 +195,12 @@ function HasValue(nameVal, optValue)
 function DeleteValues(nameVal)
 {
 	var vals = [];
-	for (var i = 0; i < GM_listValues().length; i++)
+	for (let i = 0; i < GM_listValues().length; i++)
 	{
 		vals[i] = GM_listValues()[i];
 	}
 
-	if (vals.length === 0 || typeof nameVal != "string")
+	if (vals.length === 0 || typeof nameVal !== "string")
 	{
 		return;
 	}
@@ -206,13 +208,13 @@ function DeleteValues(nameVal)
 	switch(nameVal)
 	{
 		case "all":
-			for (var i = 0; i < vals.length; i++)
+			for (let i = 0; i < vals.length; i++)
 			{
 				GM_deleteValue(vals[i]);
 			}
 			break;
 		case "old":
-			for (var i = 0; i < vals.length; i++)
+			for (let i = 0; i < vals.length; i++)
 			{
 				if (vals[i] === "debug" || vals[i] === "debugA")
 				{
@@ -221,7 +223,7 @@ function DeleteValues(nameVal)
 			}
 			break;
 		default:
-			for (var i = 0; i < vals.length; i++)
+			for (let i = 0; i < vals.length; i++)
 			{
 				if (vals[i] === nameVal)
 				{
@@ -248,16 +250,16 @@ function SetCSS()
 			"));
 
 	$("head").append($("<style type=text/css></style>").text(" bdi.btr_title   { \
-	   color:rgba(255,60,231,0) !important;        \
-	   text-shadow: 0px 0px 1em black;               \
-	   padding: 0 2px;                               \
+		color:rgba(255,60,231,0) !important;        \
+		text-shadow: 0px 0px 1em black;               \
+		padding: 0 2px;                               \
 	}                                         \
 	"));
 
 	$("head").append($("<style type=text/css></style>").text(" \
 	bdi.btr_trans                             \
 	{                                         \
-	   transition: all 0.5s ease;            \
+		transition: all 0.5s ease;            \
 	}                                         \
 	"));
 
@@ -286,7 +288,7 @@ function SetCSS()
 	$("head").append($("<style type=text/css></style>").text(" \
 	.title                                    \
 	{                                         \
-	   overflow: visible !important;         \
+		overflow: visible !important;         \
 	}                                         \
 	"));
 
@@ -529,12 +531,12 @@ function UpdateDivs()
 	if (titlesDivO.length > oldLength)
 	{
 		console.log(titlesDivO);
-		for (var i = 0; i < titlesDivO.length; i++)
+		for (let i = 0; i < titlesDivO.length; i++)
 		{
 			titlesDiv[i] = titlesDivO[i];
 		}
 		console.log(titlesDiv);
-		for (var i = 0; i < titlesDiv.length; i++)
+		for (let i = 0; i < titlesDiv.length; i++)
 		{
 			if (titlesDiv[i].querySelector("div.entry.unvoted"))
 			{
@@ -542,7 +544,7 @@ function UpdateDivs()
 				if (i >= oldLength)
 				{
 					originStrings.push(titlesTitle[i].innerHTML);
-				   // originStrings[i] = titlesTitle[i].innerHTML;
+					// originStrings[i] = titlesTitle[i].innerHTML;
 				}
 			} else
 			{
@@ -579,7 +581,7 @@ function UpdateDivs()
 
 function MyFunction() {
 	if (titlesTitle.length === 0) {
-		for (var i = 0; i < titlesDiv.length; i++) {
+		for (let i = 0; i < titlesDiv.length; i++) {
 			if (titlesDiv[i].querySelector("div.entry.unvoted")) {
 				titlesTitle[i] = titlesDiv[i].querySelector("div.entry.unvoted").querySelector("p.title").querySelector("a.title");
 				originStrings[i] = titlesTitle[i].innerHTML;
@@ -590,7 +592,7 @@ function MyFunction() {
 		}
 	}
 
-	for (var i = 0; i < titlesDiv.length; i++) {
+	for (let i = 0; i < titlesDiv.length; i++) {
 		len[i] = titlesTitle[i].innerHTML.length;
 		if (debug)
 		{
@@ -726,9 +728,8 @@ function ChangeString(l, sArr, tTitle, amount) {
 	}
 
 	if (amount === 2) {
-		var a;
-		var s = '';
-		for (a = 0; a < arrBeg.length; a++) {
+		let s = '';
+		for (let a = 0; a < arrBeg.length; a++) {
 			s += sArr.substring(arrBeg[a], arrEnd[a] + 1) + ' ';
 		}
 		if (debug)
@@ -827,9 +828,8 @@ function ChangeString(l, sArr, tTitle, amount) {
 	//example sentence: "[spoiler0]_text1_[spoiler1]_text2_[spoiler2]"
 	if (amount === 3)
 	{
-		var a;
-		var s = '';
-		for (a = 0; a < arrBeg.length; a++)
+		let s = '';
+		for (let a = 0; a < arrBeg.length; a++)
 		{
 			s += sArr.substring(arrBeg[a], arrEnd[a] + 1) + ' ';
 		}
@@ -1040,7 +1040,7 @@ function GetAllIndexes(arr, val1, val2) {
 
 function ReplaceOriginalTitles()
 {
-	for (var i = 0; i < titlesTitle.length; i++) {
+	for (let i = 0; i < titlesTitle.length; i++) {
 		titlesTitle[i].innerHTML = originStrings[i];
 	}
 }
@@ -1052,7 +1052,7 @@ function MenuCommand() {
 
 function IsEven(n)
 {
-	return n == parseFloat(n) ? !(n % 2) : void 0;
+	return n === parseFloat(n) ? !(n % 2) : void 0;
 }
 
 // ------------

@@ -10,17 +10,13 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.1.1.min.js
 // @author      TiLied
-// @version     0.5.01
+// @version     0.5.02
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
 // @grant       GM_registerMenuCommand
 // ==/UserScript==
-
-// Append some text to the element with id someText using the jQuery library. TEST JQUERY
-//$("#hsts_pixel").append(" more text.");
-
 
 //not empty val
 var titles = document.querySelectorAll("a.title"),
@@ -57,24 +53,16 @@ var btr_pTitle,
 	debug;
 
 
-//tests
-//if (currentLocation === undefined) {
-//    currentLocation = window.location;
-//}
-
-Main();
-
-  
-function Main()
+void function Main()
 {
-	console.log("Blur Title Reddit v" + GM_info.script.version + " Initialized");
+	console.log("Blur Title Reddit v" + GM_info.script.version + " initialization");
 	//Place css in <head>
 	SetCSS();
 	//Check settings or create them
 	SetSettings();
 	//Menu Monkey Command
 	GM_registerMenuCommand("Show Settings Blur Title Reddit", MenuCommand);
-	//Track scroll for infinite reddit
+	//Event on scroll for infinite reddit
 	$(document).ready(function ()
 	{
 		window.onscroll = function (ev)
@@ -88,9 +76,11 @@ function Main()
 		CheckRES();
 	});
 	//Start function on bluring titles
-	if (titlesDivO.length !== 0) {
+	if (titlesDivO.length !== 0)
+	{
 		console.log(titlesDivO);
-		for (let i = 0; i < titlesDivO.length; i++) {
+		for (let i = 0; i < titlesDivO.length; i++)
+		{
 			titlesDiv[i] = titlesDivO[i];
 		}
 		console.log(titlesDiv);
@@ -98,7 +88,7 @@ function Main()
 	}
 	//Set UI of settings
 	OptionsUI();
-}
+}();
 
 //set settings
 function SetSettings()

@@ -8,14 +8,19 @@
 // @exclude     http://*.reddit.com/r/fallout/*
 // @exclude     https://*.reddit.com/r/*/comments/*
 // @exclude     http://*.reddit.com/r/*/comments/*
-// @require     https://code.jquery.com/jquery-3.1.1.min.js
+// @require     https://code.jquery.com/jquery-3.2.1.min.js
 // @author      TiLied
-// @version     0.5.02
+// @version     0.6.00
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
 // @grant       GM_registerMenuCommand
+// @require     https://arantius.com/misc/greasemonkey/imports/greasemonkey4-polyfill.js
+// @grant       GM.listValues
+// @grant       GM.getValue
+// @grant       GM.setValue
+// @grant       GM.deleteValue
 // ==/UserScript==
 
 //not empty val
@@ -59,98 +64,96 @@ void function Main()
 	//Place css in <head>
 	SetCSS();
 	//Check settings or create them
-	SetSettings();
-	//Menu Monkey Command
-	GM_registerMenuCommand("Show Settings Blur Title Reddit", MenuCommand);
-	//Event on scroll for infinite reddit
-	$(document).ready(function ()
+	SetSettings(function ()
 	{
-		window.onscroll = function (ev)
+		//Menu Monkey Command
+		if (typeof GM_registerMenuCommand !== "undefined")
 		{
-			if ((window.innerHeight + window.pageYOffset) >= document.getElementById("siteTable").scrollHeight)
-			{
-				UpdateDivs();
-			}
-		};
-
-		CheckRES();
-	});
-	//Start function on bluring titles
-	if (titlesDivO.length !== 0)
-	{
-		console.log(titlesDivO);
-		for (let i = 0; i < titlesDivO.length; i++)
-		{
-			titlesDiv[i] = titlesDivO[i];
+			GM_registerMenuCommand("Show Settings Blur Title Reddit", MenuCommand);
 		}
-		console.log(titlesDiv);
-		MyFunction();
-	}
-	//Set UI of settings
-	OptionsUI();
+		//Event on scroll for infinite reddit
+		$(document).ready(function ()
+		{
+			window.onscroll = function (ev)
+			{
+				if ((window.innerHeight + window.pageYOffset) >= document.getElementById("siteTable").scrollHeight)
+				{
+					UpdateDivs();
+				}
+			};
+
+			CheckRES();
+		});
+		//Start function on bluring titles
+		if (titlesDivO.length !== 0)
+		{
+			console.log(titlesDivO);
+			for (let i = 0; i < titlesDivO.length; i++)
+			{
+				titlesDiv[i] = titlesDivO[i];
+			}
+			console.log(titlesDiv);
+			MyFunction();
+		}
+		//Set UI of settings
+		OptionsUI();
+	});
 }();
 
 //set settings
-function SetSettings()
+async function SetSettings(callBack)
 {
 	//Delete old values
 	DeleteValues("old");
 
 	//THIS IS ABOUT DEBUG
-	if (HasValue("btr_debug", false))
+	if (await HasValue("btr_debug", false))
 	{
-		debug = GM_getValue("btr_debug");
+		debug = await GM.getValue("btr_debug");
 	}
 
 	//THIS IS ABOUT TITLE
-	if (HasValue("btr_GMTitle", false))
+	if (await HasValue("btr_GMTitle", false))
 	{
-		btr_pTitle = GM_getValue("btr_GMTitle");
+		btr_pTitle = await GM.getValue("btr_GMTitle");
 	}
 
 	//THIS IS ABOUT asterisk
-	if (HasValue("btr_asterisk", false))
+	if (await HasValue("btr_asterisk", false))
 	{
-		asterisk = GM_getValue("btr_asterisk");
+		asterisk = await GM.getValue("btr_asterisk");
 	}
 
 	//THIS IS ABOUT USERS
-	if (HasValue("btr_pUsers", "none"))
+	if (await HasValue("btr_pUsers", "none"))
 	{
-		btr_pUsers = GM_getValue("btr_pUsers");
+		btr_pUsers = await GM.getValue("btr_pUsers");
 	}
 
 	//Console log prefs with value
 	console.log("*prefs:");
 	console.log("*-----*");
-	var vals = [];
-
+	var vals = await GM.listValues();
 	//Find out that var in for block is not local... Seriously js?
-	for (let i = 0; i < GM_listValues().length; i++)
-	{
-		vals[i] = GM_listValues()[i];
-	}
 	for (let i = 0; i < vals.length; i++)
 	{
-		console.log("*" + vals[i] + ":" + GM_getValue(vals[i]));
+		console.log("*" + vals[i] + ":" + await GM.getValue(vals[i]));
 	}
 	console.log("*-----*");
+
+	callBack();
 }
 
 //Check if value exists or not.  optValue = Optional
-function HasValue(nameVal, optValue)
+async function HasValue(nameVal, optValue)
 {
-	var vals = [];
-	for (let i = 0; i < GM_listValues().length; i++)
-	{
-		vals[i] = GM_listValues()[i];
-	}
-
+	var vals = await GM.listValues();
+	
 	if (vals.length === 0)
 	{
 		if (optValue !== undefined)
 		{
-			GM_setValue(nameVal, optValue);
+			GM.setValue(nameVal, optValue);
 			return true;
 		} else
 		{
@@ -173,7 +176,7 @@ function HasValue(nameVal, optValue)
 
 	if (optValue !== undefined)
 	{
-		GM_setValue(nameVal, optValue);
+		GM.setValue(nameVal, optValue);
 		return true;
 	} else
 	{
@@ -182,13 +185,9 @@ function HasValue(nameVal, optValue)
 }
 
 //Delete Values
-function DeleteValues(nameVal)
+async function DeleteValues(nameVal)
 {
-	var vals = [];
-	for (let i = 0; i < GM_listValues().length; i++)
-	{
-		vals[i] = GM_listValues()[i];
-	}
+	var vals = await GM.listValues();
 
 	if (vals.length === 0 || typeof nameVal !== "string")
 	{
@@ -200,7 +199,7 @@ function DeleteValues(nameVal)
 		case "all":
 			for (let i = 0; i < vals.length; i++)
 			{
-				GM_deleteValue(vals[i]);
+				GM.deleteValue(vals[i]);
 			}
 			break;
 		case "old":
@@ -208,7 +207,7 @@ function DeleteValues(nameVal)
 			{
 				if (vals[i] === "debug" || vals[i] === "debugA")
 				{
-					GM_deleteValue(vals[i]);
+					GM.deleteValue(vals[i]);
 				}
 			}
 			break;
@@ -217,7 +216,7 @@ function DeleteValues(nameVal)
 			{
 				if (vals[i] === nameVal)
 				{
-					GM_deleteValue(nameVal);
+					GM.deleteValue(nameVal);
 				}
 			}
 			break;
@@ -389,7 +388,7 @@ function TimeOut(baseNumber, func)
 }
 
 //UI FOR SETTINGS
-function OptionsUI()
+async function OptionsUI()
 {
 	const settingsDiv = $("<div id=btrSettings class=side></div>").html("<div class=spaser><div class=sidecontentbox><span class=btr_closeButton>&times</span> \
   <div class=title><h1>Settings of Blur Title Reddit " + GM_info.script.version + "</h1></div>\
@@ -425,65 +424,65 @@ function OptionsUI()
 	$("#btrSettings").hide();
 
 	//CHANGE SETTINGS BY INTERACT WITH UI
-	$("#debug").change(function ()
+	$("#debug").change(async function ()
 	{
 		if (debug === true)
 		{
-			GM_setValue("btr_debug", false);
-			debug = GM_getValue("btr_debug");
+			GM.setValue("btr_debug", false);
+			debug = await GM.getValue("btr_debug");
 		} else
 		{
-			GM_setValue("btr_debug", true);
-			debug = GM_getValue("btr_debug");
+			GM.setValue("btr_debug", true);
+			debug = await GM.getValue("btr_debug");
 		}
 
 		confirm("Settings has been changed.");
 		if (debug)
 		{
-			console.log('debug: ' + GM_getValue("btr_debug") + ' and debug: ' + debug);
+			console.log('debug: ' + await GM.getValue("btr_debug") + ' and debug: ' + debug);
 		}
 	});
 
-	$("#asterisk").change(function ()
+	$("#asterisk").change(async function ()
 	{
 		if (asterisk === true)
 		{
-			GM_setValue("btr_asterisk", false);
-			asterisk = GM_getValue("btr_asterisk");
+			GM.setValue("btr_asterisk", false);
+			asterisk = await GM.getValue("btr_asterisk");
 		} else
 		{
-			GM_setValue("btr_asterisk", true);
-			asterisk = GM_getValue("btr_asterisk");
+			GM.setValue("btr_asterisk", true);
+			asterisk = await GM.getValue("btr_asterisk");
 		}
 
 		confirm("Settings has been changed.");
 		if (debug)
 		{
-			console.log('btr_asterisk: ' + GM_getValue("btr_asterisk") + ' and asterisk: ' + asterisk);
+			console.log('btr_asterisk: ' + await GM.getValue("btr_asterisk") + ' and asterisk: ' + asterisk);
 		}
 	});
 
-	$("#btr_showTitle").change(function () {
-		GM_setValue("btr_GMTitle", false);
-		btr_pTitle = GM_getValue("btr_GMTitle");
+	$("#btr_showTitle").change(async function () {
+		GM.setValue("btr_GMTitle", false);
+		btr_pTitle = await GM.getValue("btr_GMTitle");
 		ReplaceOriginalTitles();
 		MyFunction();
 		alert("Settings has been changed. Now brackets showing.");
 		if (debug)
 		{
-			console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
+			console.log('btr_GMTitle: ' + await GM.getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
 		}
 	});
 
-	$("#btr_hideTitle").change(function () {
-		GM_setValue("btr_GMTitle", true);
-		btr_pTitle = GM_getValue("btr_GMTitle");
+	$("#btr_hideTitle").change(async function () {
+		GM.setValue("btr_GMTitle", true);
+		btr_pTitle = await GM.getValue("btr_GMTitle");
 		ReplaceOriginalTitles();
 		MyFunction();
 		alert("Settings has been changed. Now brackets hiding.");
 		if (debug)
 		{
-			console.log('btr_GMTitle: ' + GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
+			console.log('btr_GMTitle: ' + await GM.getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
 		}
 	});
 
@@ -1080,4 +1079,6 @@ function IsEven(n)
 	13.4)Make settings per subreddit??? probably not
 ✓	 13.5)Make it show settings through Menu Monkey    //DONE 0.2.02
 ✓	 13.6)Make it option to exclude, what between **, because some people do not use brackets	//DONE 0.5.00
+	14)Support GM4+, GM3 and other userscript extensions, beta 0.6.00
+	 14.1)DELETE CALLBACK!!!
 TODO ENDS */

@@ -10,13 +10,13 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.2.1.min.js
 // @author      TiLied
-// @version     0.6.00
+// @version     0.6.01
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
 // @grant       GM_registerMenuCommand
-// @require     https://arantius.com/misc/greasemonkey/imports/greasemonkey4-polyfill.js
+// @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @grant       GM.listValues
 // @grant       GM.getValue
 // @grant       GM.setValue
@@ -60,6 +60,32 @@ var btr_pTitle,
 
 void function Main()
 {
+	//HACK FOR TM/POLYFILL GM4
+	Object.entries({
+		'GM_deleteValue': 'deleteValue',
+		'GM_getValue': 'getValue',
+		'GM_info': 'info',
+		'GM_listValues': 'listValues',
+		'GM_openInTab': 'openInTab',
+		'GM_setValue': 'setValue'
+	}).forEach(([oldKey, newKey]) =>
+	{
+		if (eval("typeof " + oldKey) !== "undefined")
+			GM[newKey] = function ()
+			{
+				return new Promise((resolve, reject) =>
+				{
+					try
+					{
+						resolve(eval(oldKey).apply(this, arguments));
+					} catch (e)
+					{
+						reject(e);
+					}
+				});
+			};
+	});
+
 	console.log("Blur Title Reddit v" + GM_info.script.version + " initialization");
 	//Place css in <head>
 	SetCSS();
@@ -1079,6 +1105,6 @@ function IsEven(n)
 	13.4)Make settings per subreddit??? probably not
 ✓	 13.5)Make it show settings through Menu Monkey    //DONE 0.2.02
 ✓	 13.6)Make it option to exclude, what between **, because some people do not use brackets	//DONE 0.5.00
-	14)Support GM4+, GM3 and other userscript extensions, beta 0.6.00
+	14)Support GM4+, GM3 and other userscript extensions, beta 0.6.00	//HACK DONE 0.6.01
 	 14.1)DELETE CALLBACK!!!
 TODO ENDS */

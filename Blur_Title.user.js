@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.2.1.min.js
 // @author      TiLied
-// @version     0.6.01
+// @version     0.6.02
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -60,33 +60,7 @@ var btr_pTitle,
 
 void function Main()
 {
-	//HACK FOR TM/POLYFILL GM4
-	Object.entries({
-		'GM_deleteValue': 'deleteValue',
-		'GM_getValue': 'getValue',
-		'GM_info': 'info',
-		'GM_listValues': 'listValues',
-		'GM_openInTab': 'openInTab',
-		'GM_setValue': 'setValue'
-	}).forEach(([oldKey, newKey]) =>
-	{
-		if (eval("typeof " + oldKey) !== "undefined")
-			GM[newKey] = function ()
-			{
-				return new Promise((resolve, reject) =>
-				{
-					try
-					{
-						resolve(eval(oldKey).apply(this, arguments));
-					} catch (e)
-					{
-						reject(e);
-					}
-				});
-			};
-	});
-
-	console.log("Blur Title Reddit v" + GM_info.script.version + " initialization");
+	console.log("Blur Title Reddit v" + GM.info.script.version + " initialization");
 	//Place css in <head>
 	SetCSS();
 	//Check settings or create them
@@ -253,7 +227,7 @@ async function DeleteValues(nameVal)
 function SetCSS()
 {
 
-	$("head").append($("<!--Start of Blur Title Reddit v" + GM_info.script.version + " CSS-->"));
+	$("head").append($("<!--Start of Blur Title Reddit v" + GM.info.script.version + " CSS-->"));
 
 	$("head").append($("<style type=text/css></style>").text("bdi.btr_title:hover \
 	{                                         \
@@ -311,7 +285,7 @@ function SetCSS()
 	position: fixed; bottom: 0; right: 0; border: 0; \
 	}"));
 
-	$("head").append($("<!--End of Blur Title Reddit v" + GM_info.script.version + " CSS-->"));
+	$("head").append($("<!--End of Blur Title Reddit v" + GM.info.script.version + " CSS-->"));
 }
 
 //Check  Reddit Enhancement Suite
@@ -417,7 +391,7 @@ function TimeOut(baseNumber, func)
 async function OptionsUI()
 {
 	const settingsDiv = $("<div id=btrSettings class=side></div>").html("<div class=spaser><div class=sidecontentbox><span class=btr_closeButton>&times</span> \
-  <div class=title><h1>Settings of Blur Title Reddit " + GM_info.script.version + "</h1></div>\
+  <div class=title><h1>Settings of Blur Title Reddit " + GM.info.script.version + "</h1></div>\
   <ul class=content><li> \
   <form> \
   <br> \
@@ -1105,6 +1079,6 @@ function IsEven(n)
 	13.4)Make settings per subreddit??? probably not
 ✓	 13.5)Make it show settings through Menu Monkey    //DONE 0.2.02
 ✓	 13.6)Make it option to exclude, what between **, because some people do not use brackets	//DONE 0.5.00
-	14)Support GM4+, GM3 and other userscript extensions, beta 0.6.00	//HACK DONE 0.6.01
+✓	 14)Support GM4+, GM3 and other userscript extensions, beta 0.6.00	//HACK DONE 0.6.01		//DONE 0.6.02
 	 14.1)DELETE CALLBACK!!!
 TODO ENDS */

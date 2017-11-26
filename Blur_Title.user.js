@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.2.1.min.js
 // @author      TiLied
-// @version     0.6.02
+// @version     0.6.03
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -652,6 +652,16 @@ function ChangeString(l, sArr, tTitle, amount) {
 		arrBeg = arrBeg.concat(GetAllIndexes(sArr, "*", "even"));
 		arrEnd = arrEnd.concat(GetAllIndexes(sArr, "*", "odd"));
 	}
+
+	arrBeg.sort(function (a, b)
+	{
+		return a - b;
+	});
+
+	arrEnd.sort(function (a, b)
+	{
+		return a - b;
+	});
 
 	if (debug)
 	{

@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.2.1.min.js
 // @author      TiLied
-// @version     0.6.03
+// @version     0.6.04
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -735,6 +735,14 @@ function ChangeString(l, sArr, tTitle, amount) {
 		{
 			console.log("*words in brackets :", s);
 		}
+
+		//IF TITLE HAS ONE BRACKET WITHOUT CLOSING ONE
+		if (arrBeg.length !== arrEnd.length)
+		{
+			ChangeString(l, sArr, tTitle, 1);
+			return;
+		}
+
 		//IF WHOLE TITLE IN BRACKETS, NOT WORKING CORRECTLY TODO!
 		if ((arrBeg[0] <= 2 && arrEnd[0] >= l - 2) || (arrBeg[1] <= 2 && arrEnd[1] >= l - 2))
 		{
@@ -835,6 +843,13 @@ function ChangeString(l, sArr, tTitle, amount) {
 		if (debug)
 		{
 			console.log("*words in brackets :", s);
+		}
+
+		//IF TITLE HAS ONE BRACKET WITHOUT CLOSING ONE
+		if (arrBeg.length !== arrEnd.length)
+		{
+			ChangeString(l, sArr, tTitle, 1);
+			return;
 		}
 
 		//IF WHOLE TITLE IN BRACKETS, NOT WORKING CORRECTLY TODO!

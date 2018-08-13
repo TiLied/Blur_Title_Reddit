@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.2.1.min.js
 // @author      TiLied
-// @version     0.6.04
+// @version     0.7.00
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -49,7 +49,8 @@ var titlesDiv = [],
 	originStrings = [],
 	len = [],
 	arrBeg = [],
-	arrEnd = [];
+	arrEnd = [],
+	titlesSpoilers = [];	//2x
 
 //prefs
 var btr_pTitle,
@@ -71,6 +72,14 @@ void function Main()
 		{
 			GM_registerMenuCommand("Show Settings Blur Title Reddit", MenuCommand);
 		}
+
+		//Check For new web! 2x!
+		if ($("#2x-container").length >= 1)
+		{
+			Main2x();
+			return;
+		}
+		
 		//Event on scroll for infinite reddit
 		$(document).ready(function ()
 		{
@@ -99,6 +108,61 @@ void function Main()
 		OptionsUI();
 	});
 }();
+
+function Main2x()
+{
+	//Event on scroll for infinite reddit
+	$(document).ready(function ()
+	{
+		window.onscroll = function (ev)
+		{
+			//console.log(window.innerHeight + window.pageYOffset);
+			//console.log(document.getElementById("2x-container").scrollHeight / 2);
+			if ((window.innerHeight + window.pageYOffset) >= (document.getElementById("2x-container").scrollHeight / 2))
+			{
+				UpdateDivs2x();
+			}
+		};
+	});
+
+
+	//check for spoiler
+	function _IsSpoiler(_el)
+	{
+		var sp = $(_el).find("span").contents().filter(function ()
+		{
+			return this.nodeType === 3 && this.textContent === 'spoiler'; //TODO NOT JUST FLAIR, SEE TODO 3.1
+		});
+
+		if (sp.length >= 1)
+			return true;
+		else
+			return false;
+	}
+
+	titles = $(".Post");
+		for (let i = 0; i < titles.length; i++)
+		{
+			if (_IsSpoiler(titles[i]))
+			{
+				titlesSpoilers.push(titles[i]);
+			}
+		}
+	//Start function on bluring titles
+
+	if (titlesSpoilers.length !== 0)
+	{
+		console.log(titlesSpoilers);
+		for (let i = 0; i < titlesSpoilers.length; i++)
+		{
+			titlesDiv[i] = titlesSpoilers[i];
+		}
+		console.log(titlesDiv);
+		MyFunction2x();
+	}
+	//Set UI of settings
+	//OptionsUI();
+}
 
 //set settings
 async function SetSettings(callBack)
@@ -568,6 +632,74 @@ function UpdateDivs()
 
 }
 
+function UpdateDivs2x()
+{
+	var oldLength = titlesSpoilers.length;
+
+	var oldLengthPost = titles.length;
+
+	//check for spoiler
+	function _IsSpoiler(_el)
+	{
+		var sp = $(_el).find("span").contents().filter(function ()
+		{
+			return this.nodeType === 3 && this.textContent === 'spoiler'; //TODO NOT JUST FLAIR, SEE TODO 3.1
+		});
+
+		if (sp.length >= 1)
+			return true;
+		else
+			return false;
+	}
+
+	titles = $(".Post");
+
+	if (titles.length <= oldLengthPost)
+		return;
+
+	for (let i = oldLengthPost; i < titles.length; i++)
+	{
+		if (_IsSpoiler(titles[i]))
+		{
+			titlesSpoilers.push(titles[i]);
+		}
+	}
+
+	if (titlesSpoilers.length > oldLength)
+	{
+		console.log(titlesSpoilers);
+		for (let i = 0; i < titlesSpoilers.length; i++)
+		{
+			titlesDiv[i] = titlesSpoilers[i];
+		}
+		console.log(titlesDiv);
+		for (let i = 0; i < titlesDiv.length; i++)
+		{
+			var a = $(titlesDiv[i]).find("a");
+			for (let j = 0; j < a.length; j++)
+			{
+				//console.log($(a[j]).is("data-click-id=body"));
+				if ($(a[j]).attr("data-click-id") === "body")
+				{
+					titlesTitle[i] = $(a[j]).find("h2")[0]; //TO specific NEED UPDATE! PROBABLY BREAKS PER SUBREDDIT OR TILL REDDIT ITS UPDATED
+					if (i >= oldLength)
+						originStrings.push(titlesTitle[i].innerHTML);
+				}
+			}
+		}
+		if (debug)
+		{
+			console.log(originStrings);
+		}
+		oldLength = titlesSpoilers.length;
+		MyFunction2x();
+	} else
+	{
+		return;
+	}
+
+}
+
 function MyFunction() {
 	if (titlesTitle.length === 0) {
 		for (let i = 0; i < titlesDiv.length; i++) {
@@ -598,6 +730,42 @@ function MyFunction() {
 
 }
 
+function MyFunction2x()
+{
+	if (titlesTitle.length === 0)
+	{
+		for (let i = 0; i < titlesDiv.length; i++)
+		{
+			var a = $(titlesDiv[i]).find("a");
+			for (let j = 0; j < a.length; j++)
+			{
+				//console.log($(a[j]).is("data-click-id=body"));
+				if ($(a[j]).attr("data-click-id") === "body")
+				{
+					titlesTitle[i] = $(a[j]).find("h2")[0]; //TO specific NEED UPDATE! PROBABLY BREAKS PER SUBREDDIT OR TILL REDDIT ITS UPDATED
+					originStrings[i] = titlesTitle[i].innerHTML;
+				}
+			}
+		}
+	}
+
+	for (let i = 0; i < titlesDiv.length; i++)
+	{
+		len[i] = titlesTitle[i].innerHTML.length;
+		if (debug)
+		{
+			console.log(titlesTitle[i].innerHTML, len[i]);
+		}
+		stringArr[i] = titlesTitle[i].innerHTML;
+		if (stringArr[i].toString().search(stringStartbdi))
+		{
+			stringArr[i] = originStrings[i];
+		}
+		FindBracPref(len[i], stringArr[i], titlesTitle[i]);
+		//console.log("array " + stringArr[i]);
+	}
+
+}
 function FindBracPref(l, sArr, tTitle)
 {
 	//console.log(GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
@@ -1074,6 +1242,7 @@ function IsEven(n)
 // ------------
 
 /* TODO STARTS
+✓	 0)SUPPORT NEW WEB!!!	//DONE 0.7.00
 ✓	 1)Rewrite everything in Jquery ***RESEARCH NEEDED*** by this mean delete GM_addstyle //DONE 0.2.05
 	2)Made it exclude of users, mean that post of their users WILL NOT bluring, Partial done(array) in 0.0.0.08
 	3)Make it exclude of linkflairs, because every subreddit has its own flair its hard ***RESEARCH NEEDED***

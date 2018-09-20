@@ -10,7 +10,7 @@
 // @exclude     http://*.reddit.com/r/*/comments/*
 // @require     https://code.jquery.com/jquery-3.2.1.min.js
 // @author      TiLied
-// @version     0.7.00
+// @version     0.7.01
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
@@ -161,7 +161,7 @@ function Main2x()
 		MyFunction2x();
 	}
 	//Set UI of settings
-	//OptionsUI();
+	OptionsUI2x();
 }
 
 //set settings
@@ -346,7 +346,7 @@ function SetCSS()
 	"));
 
 	$("head").append($("<style type=text/css></style>").text("div.btr_opt { \
-	position: fixed; bottom: 0; right: 0; border: 0; \
+	position: fixed; bottom: 0; right: 0; border: 0; z-index: 500;\
 	}"));
 
 	$("head").append($("<!--End of Blur Title Reddit v" + GM.info.script.version + " CSS-->"));
@@ -576,6 +576,140 @@ async function OptionsUI()
 	});
 
 }
+
+
+//UI FOR SETTINGS for 2x
+async function OptionsUI2x()
+{
+	const settingsDiv = $("<div id=btrSettings class='side jAyrXr'></div>").html("<div class=spaser ><div class=sidecontentbox><span class=btr_closeButton>&times</span> \
+  <div class=title><h1>Settings of Blur Title Reddit " + GM.info.script.version + "</h1></div>\
+  <ul class=content><li> \
+  <form> \
+  <br> \
+  <p>Bluring option:</p>\
+  <input type=radio name=title id=btr_showTitle >Show brackets</input><br> \
+  <input type=radio name=title id=btr_hideTitle >Hide brackets</input><br><br> \
+	<input type=checkbox name=asterisk id=asterisk >Show what between asterisks like brackets</input><br><br> \
+  <input type=checkbox name=debug id=debug >Debug</input><br> \
+  </form> <br> \
+  <button id=btr_hide class=hauwm>Hide Settings</button></li></ul></div></div> \
+  ");
+
+
+
+	$("body").append(settingsDiv);
+
+	//SET UI SETTINGS
+	$("#debug").prop("checked", debug);
+
+	$("#asterisk").prop("checked", asterisk);
+
+	if (btr_pTitle === true)
+	{
+		$("#btr_hideTitle").prop("checked", true);
+	} else
+	{
+		$("#btr_showTitle").prop("checked", true);
+	}
+
+	$("#btrSettings").hide();
+
+	//CHANGE SETTINGS BY INTERACT WITH UI
+	$("#debug").change(async function ()
+	{
+		if (debug === true)
+		{
+			GM.setValue("btr_debug", false);
+			debug = await GM.getValue("btr_debug");
+		} else
+		{
+			GM.setValue("btr_debug", true);
+			debug = await GM.getValue("btr_debug");
+		}
+
+		confirm("Settings has been changed.");
+		if (debug)
+		{
+			console.log('debug: ' + await GM.getValue("btr_debug") + ' and debug: ' + debug);
+		}
+	});
+
+	$("#asterisk").change(async function ()
+	{
+		if (asterisk === true)
+		{
+			GM.setValue("btr_asterisk", false);
+			asterisk = await GM.getValue("btr_asterisk");
+		} else
+		{
+			GM.setValue("btr_asterisk", true);
+			asterisk = await GM.getValue("btr_asterisk");
+		}
+
+		confirm("Settings has been changed.");
+		if (debug)
+		{
+			console.log('btr_asterisk: ' + await GM.getValue("btr_asterisk") + ' and asterisk: ' + asterisk);
+		}
+	});
+
+	$("#btr_showTitle").change(async function ()
+	{
+		GM.setValue("btr_GMTitle", false);
+		btr_pTitle = await GM.getValue("btr_GMTitle");
+		ReplaceOriginalTitles();
+		MyFunction();
+		alert("Settings has been changed. Now brackets showing.");
+		if (debug)
+		{
+			console.log('btr_GMTitle: ' + await GM.getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
+		}
+	});
+
+	$("#btr_hideTitle").change(async function ()
+	{
+		GM.setValue("btr_GMTitle", true);
+		btr_pTitle = await GM.getValue("btr_GMTitle");
+		ReplaceOriginalTitles();
+		MyFunction();
+		alert("Settings has been changed. Now brackets hiding.");
+		if (debug)
+		{
+			console.log('btr_GMTitle: ' + await GM.getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
+		}
+	});
+
+	//TODO
+	//$(".side").append("<div class=spacer><div class=sidecontentbox><div class=title><h1>BLUR TITLE REDDIT</h1></div><ul class=content><li><button id=btr_show >Show settings</button></li></ul></div></div>");
+	//console.log(currentLocation.pathname);
+	//if (currentLocation.pathname === "/r/Steam")
+	//{
+	//    $(".debuginfo").after("<p><a id=btr_show style={float=right;}>show settings blur title reddit</a></p>");
+	//} else {
+	//$(".side").append("<div class=spacer><div class=account-activity-box><p><a id=btr_show >show settings blur title reddit</a></p></div></div>");
+	//}
+
+	$(".cibgmy").append("<div class=spacer><div class=account-activity-box style=cursor:pointer;><p><a id=btr_show >show settings for blur title reddit</a></p></div></div>");
+
+	$(document).ready(function ()
+	{
+		$("#btr_hide").click(function ()
+		{
+			$("#btrSettings").hide(1000);
+		});
+		$(".btr_closeButton").click(function ()
+		{
+			$("#btrSettings").hide(1000);
+		});
+		$("#btr_show").click(function ()
+		{
+			$("#btrSettings").show(1000);
+			$("#btrSettings").addClass("btr_opt");
+		});
+	});
+
+}
+
 
 function UpdateDivs()
 {

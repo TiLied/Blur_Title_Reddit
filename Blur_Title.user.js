@@ -4,18 +4,14 @@
 // @description Blurring a title which marked as spoiler in reddit, just like in fallout subreddit.
 // @include     https://*.reddit.com/*
 // @include     http://*.reddit.com/*
-// @exclude     https://*.reddit.com/r/fallout/*
-// @exclude     http://*.reddit.com/r/fallout/*
 // @exclude     https://*.reddit.com/r/*/comments/*
 // @exclude     http://*.reddit.com/r/*/comments/*
-// @require     https://code.jquery.com/jquery-3.2.1.min.js
 // @author      TiLied
-// @version     0.7.01
+// @version     0.8.00
 // @grant       GM_listValues
 // @grant       GM_getValue
 // @grant       GM_setValue
 // @grant       GM_deleteValue
-// @grant       GM_registerMenuCommand
 // @require     https://greasemonkey.github.io/gm4-polyfill/gm4-polyfill.js
 // @grant       GM.listValues
 // @grant       GM.getValue
@@ -23,301 +19,47 @@
 // @grant       GM.deleteValue
 // ==/UserScript==
 
-//not empty val
-var titles = document.querySelectorAll("a.title"),
-	titlesDivO = document.querySelectorAll("div.spoiler");
-
-//const
-const stringStartbdi = '<bdi class = "btr_main btr_title btr_trans">',
-	stringEndbdi = '</bdi>',
-	oneSecond = 1000;
-
-//empty val
-var res,
-	currentLocation,
-	string,
-	stringCSS,
-	firstB,
-	lastB,
-	lengthOfIndexes;
-
-//arrays
-var titlesDiv = [],
-	titlesTitle = [],
-	stringArr = [],
-	stringOri = [],
-	originStrings = [],
-	len = [],
-	arrBeg = [],
-	arrEnd = [],
-	titlesSpoilers = [];	//2x
-
-//prefs
-var btr_pTitle,
-	btr_pUsers,
-	asterisk,
-	debug;
-
-
-void function Main()
+class BlurTitleReddit
 {
-	console.log("Blur Title Reddit v" + GM.info.script.version + " initialization");
-	//Place css in <head>
-	SetCSS();
-	//Check settings or create them
-	SetSettings(function ()
+	constructor()
 	{
-		//Menu Monkey Command
-		if (typeof GM_registerMenuCommand !== "undefined")
-		{
-			GM_registerMenuCommand("Show Settings Blur Title Reddit", MenuCommand);
-		}
+		console.log("Blur Title Reddit v" + GM.info.script.version + " initialization");
 
-		//Check For new web! 2x!
-		if ($("#2x-container").length >= 1)
-		{
-			Main2x();
-			return;
-		}
+		this.Debug = false;
+
+		this.btr_pTitle = false;
+		this.asterisk = true;
 		
-		//Event on scroll for infinite reddit
-		$(document).ready(function ()
-		{
-			window.onscroll = function (ev)
-			{
-				if ((window.innerHeight + window.pageYOffset) >= document.getElementById("siteTable").scrollHeight)
-				{
-					UpdateDivs();
-				}
-			};
+		this.Scroll = 1;
 
-			CheckRES();
-		});
-		//Start function on bluring titles
-		if (titlesDivO.length !== 0)
-		{
-			console.log(titlesDivO);
-			for (let i = 0; i < titlesDivO.length; i++)
-			{
-				titlesDiv[i] = titlesDivO[i];
-			}
-			console.log(titlesDiv);
-			MyFunction();
-		}
-		//Set UI of settings
-		OptionsUI();
-	});
-}();
-
-function Main2x()
-{
-	//Event on scroll for infinite reddit
-	$(document).ready(function ()
-	{
-		window.onscroll = function (ev)
-		{
-			//console.log(window.innerHeight + window.pageYOffset);
-			//console.log(document.getElementById("2x-container").scrollHeight / 2);
-			if ((window.innerHeight + window.pageYOffset) >= (document.getElementById("2x-container").scrollHeight / 2))
-			{
-				UpdateDivs2x();
-			}
-		};
-	});
-
-
-	//check for spoiler
-	function _IsSpoiler(_el)
-	{
-		var sp = $(_el).find("span").contents().filter(function ()
-		{
-			return this.nodeType === 3 && this.textContent === 'spoiler'; //TODO NOT JUST FLAIR, SEE TODO 3.1
-		});
-
-		if (sp.length >= 1)
-			return true;
-		else
-			return false;
+		this._FirstTime();
+		this._SetCSS();
 	}
 
-	titles = $(".Post");
-		for (let i = 0; i < titles.length; i++)
-		{
-			if (_IsSpoiler(titles[i]))
-			{
-				titlesSpoilers.push(titles[i]);
-			}
-		}
-	//Start function on bluring titles
-
-	if (titlesSpoilers.length !== 0)
+	_SetCSS()
 	{
-		console.log(titlesSpoilers);
-		for (let i = 0; i < titlesSpoilers.length; i++)
-		{
-			titlesDiv[i] = titlesSpoilers[i];
-		}
-		console.log(titlesDiv);
-		MyFunction2x();
-	}
-	//Set UI of settings
-	OptionsUI2x();
-}
+		document.head.append("<!--Start of Blur Title Reddit v" + GM.info.script.version + " CSS-->");
 
-//set settings
-async function SetSettings(callBack)
-{
-	//Delete old values
-	DeleteValues("old");
-
-	//THIS IS ABOUT DEBUG
-	if (await HasValue("btr_debug", false))
-	{
-		debug = await GM.getValue("btr_debug");
-	}
-
-	//THIS IS ABOUT TITLE
-	if (await HasValue("btr_GMTitle", false))
-	{
-		btr_pTitle = await GM.getValue("btr_GMTitle");
-	}
-
-	//THIS IS ABOUT asterisk
-	if (await HasValue("btr_asterisk", false))
-	{
-		asterisk = await GM.getValue("btr_asterisk");
-	}
-
-	//THIS IS ABOUT USERS
-	if (await HasValue("btr_pUsers", "none"))
-	{
-		btr_pUsers = await GM.getValue("btr_pUsers");
-	}
-
-	//Console log prefs with value
-	console.log("*prefs:");
-	console.log("*-----*");
-	var vals = await GM.listValues();
-	//Find out that var in for block is not local... Seriously js?
-	for (let i = 0; i < vals.length; i++)
-	{
-		console.log("*" + vals[i] + ":" + await GM.getValue(vals[i]));
-	}
-	console.log("*-----*");
-
-	callBack();
-}
-
-//Check if value exists or not.  optValue = Optional
-async function HasValue(nameVal, optValue)
-{
-	var vals = await GM.listValues();
-	
-	if (vals.length === 0)
-	{
-		if (optValue !== undefined)
-		{
-			GM.setValue(nameVal, optValue);
-			return true;
-		} else
-		{
-			return false;
-		}
-	}
-
-	if (typeof nameVal !== "string")
-	{
-		return alert("name of value: '" + nameVal + "' are not string");
-	}
-
-	for (let i = 0; i < vals.length; i++)
-	{
-		if (vals[i] === nameVal)
-		{
-			return true;
-		}
-	}
-
-	if (optValue !== undefined)
-	{
-		GM.setValue(nameVal, optValue);
-		return true;
-	} else
-	{
-		return false;
-	}
-}
-
-//Delete Values
-async function DeleteValues(nameVal)
-{
-	var vals = await GM.listValues();
-
-	if (vals.length === 0 || typeof nameVal !== "string")
-	{
-		return;
-	}
-
-	switch(nameVal)
-	{
-		case "all":
-			for (let i = 0; i < vals.length; i++)
-			{
-				GM.deleteValue(vals[i]);
-			}
-			break;
-		case "old":
-			for (let i = 0; i < vals.length; i++)
-			{
-				if (vals[i] === "debug" || vals[i] === "debugA")
-				{
-					GM.deleteValue(vals[i]);
-				}
-			}
-			break;
-		default:
-			for (let i = 0; i < vals.length; i++)
-			{
-				if (vals[i] === nameVal)
-				{
-					GM.deleteValue(nameVal);
-				}
-			}
-			break;
-	}
-}
-
-//css
-function SetCSS()
-{
-
-	$("head").append($("<!--Start of Blur Title Reddit v" + GM.info.script.version + " CSS-->"));
-
-	$("head").append($("<style type=text/css></style>").text("bdi.btr_title:hover \
+		document.head.insertAdjacentHTML("beforeend", `<style type="text/css">bdi.btr_title:hover \
 	{                                         \
 		color:inherit!important;          \
 		background:transparent!important;     \
 		text-decoration:none!important;       \
 		text-shadow:0 0.1px 0 #dcddce         \
-	}                                         \
-			"));
+	}</style>`);
 
-	$("head").append($("<style type=text/css></style>").text(" bdi.btr_title   { \
+		document.head.insertAdjacentHTML("beforeend", `<style type="text/css">bdi.btr_title   { \
 		color:rgba(255,60,231,0) !important;        \
 		text-shadow: 0px 0px 1em black;               \
 		padding: 0 2px;                               \
-	}                                         \
-	"));
+	}</style>`);
 
-	$("head").append($("<style type=text/css></style>").text(" \
-	bdi.btr_trans                             \
+		document.head.insertAdjacentHTML("beforeend", `<style type="text/css">bdi.btr_trans                             \
 	{                                         \
 		transition: all 0.5s ease;            \
-	}                                         \
-	"));
+	}</style>`);
 
-	$("head").append($("<style type=text/css></style>").text(" \
-	.btr_closeButton                             \
+		document.head.insertAdjacentHTML("beforeend", `<style type="text/css">.btr_closeButton\
 	{                         \
 		cursor: pointer; \
 		text-align: center; \
@@ -327,1086 +69,821 @@ function SetCSS()
 		border:1px solid #AAA;               \
 		width:16px;                         \
 		height:16px;                        \
-	}                                         \
-	"));
+	}</style>`);
 
-	$("head").append($("<style type=text/css></style>").text(" \
-	.btr_closeButton:hover                             \
+		document.head.insertAdjacentHTML("beforeend", `<style type="text/css">.btr_closeButton:hover                             \
 	{                         \
 		border:1px solid #999;               \
 		background-color: #ddd;                          \
-	}                                         \
-	"));
+	}</style>`);
 
-	$("head").append($("<style type=text/css></style>").text(" \
-	.title                                    \
+		document.head.insertAdjacentHTML("beforeend", `<style type="text/css">.title                                    \
 	{                                         \
 		overflow: visible !important;         \
-	}                                         \
-	"));
+	}</style>`);
 
-	$("head").append($("<style type=text/css></style>").text("div.btr_opt { \
+		document.head.insertAdjacentHTML("beforeend", `<style type="text/css">"div.btr_opt { \
 	position: fixed; bottom: 0; right: 0; border: 0; z-index: 500;\
-	}"));
+	}</style>`);
 
-	$("head").append($("<!--End of Blur Title Reddit v" + GM.info.script.version + " CSS-->"));
-}
-
-//Check  Reddit Enhancement Suite
-function CheckRES()
-{
-	if (debug)
-	{
-		console.log("CHECK RES/NER:");
-		console.group();
+		document.head.append("<!--End of Blur Title Reddit v" + GM.info.script.version + " CSS-->");
 	}
-		if ($(".neverEndingReddit").length === 0) {
-			if (debug)
+
+	async _FirstTime()
+	{
+		if (this.HasValueGM("btr_GMTitle", false))
+		{
+			this.btr_pTitle = await GM.getValue("btr_GMTitle");
+		}
+
+		if (this.HasValueGM("btr_asterisk", true))
+		{
+			this.asterisk = await GM.getValue("btr_asterisk");
+		}
+
+		//Console log prefs with value
+		console.log("*prefs:");
+		console.log("*-----*");
+		let vals = await GM.listValues();
+
+		//Find out that var in for block is not local... Seriously js?
+		for (let i = 0; i < vals.length; i++)
+		{
+			console.log("*" + vals[i] + ":" + await GM.getValue(vals[i]));
+		}
+		console.log("*-----*");
+	}
+
+	Main()
+	{
+		window.onscroll = function (ev)
+		{
+			if (window.pageYOffset >= window.innerHeight * btr.Scroll)
 			{
-				console.log($(".neverEndingReddit"));
+				btr.Core();
+
+				btr.Scroll += 1;
 			}
-			if ($(".neverEndingReddit").length === 0) {
-				if (debug)
+		};
+
+		this.Core();
+
+		//Set UI of settings
+		//TODO UI!
+		//this.OptionsUI();
+	}
+
+	Core()
+	{
+		let _titlesDivQ = document.querySelectorAll("div.spoiler");
+		let _titlesDiv = [];
+
+		if (_titlesDivQ.length == 0)
+		{
+			function _IsSpoiler(_el)
+			{
+				let _spans = _el.querySelectorAll("span");
+
+				if (btr.Debug)
+					console.log(_el.querySelectorAll("span"));
+
+				for (let i = 0; i <= _spans.length; i++)
 				{
-					console.log($(".neverEndingReddit"));
+					if (i == _spans.length)
+						return false;
+
+					if (_spans[i].textContent == 'spoiler')
+						return true;
 				}
-				if ($(".neverEndingReddit").length === 0) {
-					if (debug)
-					{
-						console.log($(".neverEndingReddit"));
-					}
-						if ($(".neverEndingReddit").length === 0) {
-							setTimeout(function () {
-								if (debug)
-								{
-									console.log($(".neverEndingReddit"));
-								}
-									if ($(".neverEndingReddit").length === 0) {
-										setTimeout(function () {
-											if (debug)
-											{
-												console.log($(".neverEndingReddit"));
-												console.groupEnd();
-											}
-											if ($(".neverEndingReddit").length === 0)
-											{
-												res = false;
-												return;
-											} else {
-												SearchForNER();
-												return;
-											}
-										}, 4500);
-									} else {
-										SearchForNER();
-										return;
-									}                              
-							}, 2000);
-						} else {
-							SearchForNER();
-							return;
-						}
-				} else {
-					SearchForNER();
-					return;
-				}
-			} else
-			{
-				SearchForNER();
-				return;
 			}
-			//console.log("Check current RES : " + res[0]);
-		} else
-		{
-			SearchForNER();
-			if (debug)
+
+			let _titles = document.querySelectorAll(".Post");
+
+			for (let i = 0; i < _titles.length; i++)
 			{
-				console.groupEnd();
-			}
-			return;
-		}
-	//console.log("Check current RES : " + res[0]);
-}
-
-function SearchForNER()
-{
-	res = true;
-	if (debug)
-	{
-		console.log("Check current RES : " + res);
-	}
-	$(".neverEndingReddit").on("click", function () {
-		//alert("Settings has been changed. Now brackets hiding.");
-		TimeOut(oneSecond, function ()
-		{
-			UpdateDivs();
-			CheckRES();
-		});
-	});
-}
-
-//DO NOT ASK ME WHY
-function TimeOut(baseNumber, func)
-{
-	setTimeout(func, baseNumber);
-}
-
-//UI FOR SETTINGS
-async function OptionsUI()
-{
-	const settingsDiv = $("<div id=btrSettings class=side></div>").html("<div class=spaser><div class=sidecontentbox><span class=btr_closeButton>&times</span> \
-  <div class=title><h1>Settings of Blur Title Reddit " + GM.info.script.version + "</h1></div>\
-  <ul class=content><li> \
-  <form> \
-  <br> \
-  <p>Bluring option:</p>\
-  <input type=radio name=title id=btr_showTitle >Show brackets</input><br> \
-  <input type=radio name=title id=btr_hideTitle >Hide brackets</input><br><br> \
-	<input type=checkbox name=asterisk id=asterisk >Show what between asterisks like brackets</input><br><br> \
-  <input type=checkbox name=debug id=debug >Debug</input><br> \
-  </form> <br> \
-  <button id=btr_hide>Hide Settings</button></li></ul></div></div> \
-  ");
-
-
-
-	$("body").append(settingsDiv);
-
-	//SET UI SETTINGS
-	$("#debug").prop("checked", debug);
-
-	$("#asterisk").prop("checked", asterisk);
-
-	if (btr_pTitle === true)
-	{
-		$("#btr_hideTitle").prop("checked", true);
-	} else
-	{
-		$("#btr_showTitle").prop("checked", true);
-	}
-
-	$("#btrSettings").hide();
-
-	//CHANGE SETTINGS BY INTERACT WITH UI
-	$("#debug").change(async function ()
-	{
-		if (debug === true)
-		{
-			GM.setValue("btr_debug", false);
-			debug = await GM.getValue("btr_debug");
-		} else
-		{
-			GM.setValue("btr_debug", true);
-			debug = await GM.getValue("btr_debug");
-		}
-
-		confirm("Settings has been changed.");
-		if (debug)
-		{
-			console.log('debug: ' + await GM.getValue("btr_debug") + ' and debug: ' + debug);
-		}
-	});
-
-	$("#asterisk").change(async function ()
-	{
-		if (asterisk === true)
-		{
-			GM.setValue("btr_asterisk", false);
-			asterisk = await GM.getValue("btr_asterisk");
-		} else
-		{
-			GM.setValue("btr_asterisk", true);
-			asterisk = await GM.getValue("btr_asterisk");
-		}
-
-		confirm("Settings has been changed.");
-		if (debug)
-		{
-			console.log('btr_asterisk: ' + await GM.getValue("btr_asterisk") + ' and asterisk: ' + asterisk);
-		}
-	});
-
-	$("#btr_showTitle").change(async function () {
-		GM.setValue("btr_GMTitle", false);
-		btr_pTitle = await GM.getValue("btr_GMTitle");
-		ReplaceOriginalTitles();
-		MyFunction();
-		alert("Settings has been changed. Now brackets showing.");
-		if (debug)
-		{
-			console.log('btr_GMTitle: ' + await GM.getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
-		}
-	});
-
-	$("#btr_hideTitle").change(async function () {
-		GM.setValue("btr_GMTitle", true);
-		btr_pTitle = await GM.getValue("btr_GMTitle");
-		ReplaceOriginalTitles();
-		MyFunction();
-		alert("Settings has been changed. Now brackets hiding.");
-		if (debug)
-		{
-			console.log('btr_GMTitle: ' + await GM.getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
-		}
-	});
-
-	//TODO
-	//$(".side").append("<div class=spacer><div class=sidecontentbox><div class=title><h1>BLUR TITLE REDDIT</h1></div><ul class=content><li><button id=btr_show >Show settings</button></li></ul></div></div>");
-	//console.log(currentLocation.pathname);
-	//if (currentLocation.pathname === "/r/Steam")
-	//{
-	//    $(".debuginfo").after("<p><a id=btr_show style={float=right;}>show settings blur title reddit</a></p>");
-	//} else {
-		//$(".side").append("<div class=spacer><div class=account-activity-box><p><a id=btr_show >show settings blur title reddit</a></p></div></div>");
-	//}
-
-	$(".side:first").append("<div class=spacer><div class=account-activity-box style=cursor:pointer;><p><a id=btr_show >show settings blur title reddit</a></p></div></div>");
-
-	$(document).ready(function () {
-		$("#btr_hide").click(function () {
-			$("#btrSettings").hide(1000);
-		});
-		$(".btr_closeButton").click(function () {
-			$("#btrSettings").hide(1000);
-		});
-		$("#btr_show").click(function () {
-			$("#btrSettings").show(1000);
-			$("#btrSettings").addClass("btr_opt");
-		});
-	});
-
-}
-
-
-//UI FOR SETTINGS for 2x
-async function OptionsUI2x()
-{
-	const settingsDiv = $("<div id=btrSettings class='side jAyrXr'></div>").html("<div class=spaser ><div class=sidecontentbox><span class=btr_closeButton>&times</span> \
-  <div class=title><h1>Settings of Blur Title Reddit " + GM.info.script.version + "</h1></div>\
-  <ul class=content><li> \
-  <form> \
-  <br> \
-  <p>Bluring option:</p>\
-  <input type=radio name=title id=btr_showTitle >Show brackets</input><br> \
-  <input type=radio name=title id=btr_hideTitle >Hide brackets</input><br><br> \
-	<input type=checkbox name=asterisk id=asterisk >Show what between asterisks like brackets</input><br><br> \
-  <input type=checkbox name=debug id=debug >Debug</input><br> \
-  </form> <br> \
-  <button id=btr_hide class=hauwm>Hide Settings</button></li></ul></div></div> \
-  ");
-
-
-
-	$("body").append(settingsDiv);
-
-	//SET UI SETTINGS
-	$("#debug").prop("checked", debug);
-
-	$("#asterisk").prop("checked", asterisk);
-
-	if (btr_pTitle === true)
-	{
-		$("#btr_hideTitle").prop("checked", true);
-	} else
-	{
-		$("#btr_showTitle").prop("checked", true);
-	}
-
-	$("#btrSettings").hide();
-
-	//CHANGE SETTINGS BY INTERACT WITH UI
-	$("#debug").change(async function ()
-	{
-		if (debug === true)
-		{
-			GM.setValue("btr_debug", false);
-			debug = await GM.getValue("btr_debug");
-		} else
-		{
-			GM.setValue("btr_debug", true);
-			debug = await GM.getValue("btr_debug");
-		}
-
-		confirm("Settings has been changed.");
-		if (debug)
-		{
-			console.log('debug: ' + await GM.getValue("btr_debug") + ' and debug: ' + debug);
-		}
-	});
-
-	$("#asterisk").change(async function ()
-	{
-		if (asterisk === true)
-		{
-			GM.setValue("btr_asterisk", false);
-			asterisk = await GM.getValue("btr_asterisk");
-		} else
-		{
-			GM.setValue("btr_asterisk", true);
-			asterisk = await GM.getValue("btr_asterisk");
-		}
-
-		confirm("Settings has been changed.");
-		if (debug)
-		{
-			console.log('btr_asterisk: ' + await GM.getValue("btr_asterisk") + ' and asterisk: ' + asterisk);
-		}
-	});
-
-	$("#btr_showTitle").change(async function ()
-	{
-		GM.setValue("btr_GMTitle", false);
-		btr_pTitle = await GM.getValue("btr_GMTitle");
-		ReplaceOriginalTitles();
-		MyFunction();
-		alert("Settings has been changed. Now brackets showing.");
-		if (debug)
-		{
-			console.log('btr_GMTitle: ' + await GM.getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
-		}
-	});
-
-	$("#btr_hideTitle").change(async function ()
-	{
-		GM.setValue("btr_GMTitle", true);
-		btr_pTitle = await GM.getValue("btr_GMTitle");
-		ReplaceOriginalTitles();
-		MyFunction();
-		alert("Settings has been changed. Now brackets hiding.");
-		if (debug)
-		{
-			console.log('btr_GMTitle: ' + await GM.getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
-		}
-	});
-
-	//TODO
-	//$(".side").append("<div class=spacer><div class=sidecontentbox><div class=title><h1>BLUR TITLE REDDIT</h1></div><ul class=content><li><button id=btr_show >Show settings</button></li></ul></div></div>");
-	//console.log(currentLocation.pathname);
-	//if (currentLocation.pathname === "/r/Steam")
-	//{
-	//    $(".debuginfo").after("<p><a id=btr_show style={float=right;}>show settings blur title reddit</a></p>");
-	//} else {
-	//$(".side").append("<div class=spacer><div class=account-activity-box><p><a id=btr_show >show settings blur title reddit</a></p></div></div>");
-	//}
-
-	$(".cibgmy").append("<div class=spacer><div class=account-activity-box style=cursor:pointer;><p><a id=btr_show >show settings for blur title reddit</a></p></div></div>");
-
-	$(document).ready(function ()
-	{
-		$("#btr_hide").click(function ()
-		{
-			$("#btrSettings").hide(1000);
-		});
-		$(".btr_closeButton").click(function ()
-		{
-			$("#btrSettings").hide(1000);
-		});
-		$("#btr_show").click(function ()
-		{
-			$("#btrSettings").show(1000);
-			$("#btrSettings").addClass("btr_opt");
-		});
-	});
-
-}
-
-
-function UpdateDivs()
-{
-	var oldLength = titlesDivO.length;
-	titlesDivO = document.querySelectorAll("div.spoiler");
-	if (titlesDivO.length > oldLength)
-	{
-		console.log(titlesDivO);
-		for (let i = 0; i < titlesDivO.length; i++)
-		{
-			titlesDiv[i] = titlesDivO[i];
-		}
-		console.log(titlesDiv);
-		for (let i = 0; i < titlesDiv.length; i++)
-		{
-			if (titlesDiv[i].querySelector("div.entry.unvoted"))
-			{
-				titlesTitle[i] = titlesDiv[i].querySelector("div.entry.unvoted").querySelector("p.title").querySelector("a.title");
-				if (i >= oldLength)
+				if (_IsSpoiler(_titles[i]))
 				{
-					originStrings.push(titlesTitle[i].innerHTML);
-					// originStrings[i] = titlesTitle[i].innerHTML;
+					_titlesDiv.push(_titles[i]);
 				}
-			} else
-			{
-				titlesTitle[i] = titlesDiv[i].querySelector("div.entry").querySelector("p.title").querySelector("a.title");
-				if (i >= oldLength)
-				{
-					originStrings.push(titlesTitle[i].innerHTML);
-					// originStrings[i] = titlesTitle[i].innerHTML;
-				}
-			}
-		}
-		if (debug)
-		{
-			console.log(originStrings);
-		}
-		oldLength = titlesDivO.length;
-		MyFunction();
-	} else
-	{
-		if (res)
-		{
-			TimeOut(oneSecond, function ()
-			{
-				UpdateDivs();
-				CheckRES();
-			});
-		} else
-		{
-			return;
-		}
-	}
-
-}
-
-function UpdateDivs2x()
-{
-	var oldLength = titlesSpoilers.length;
-
-	var oldLengthPost = titles.length;
-
-	//check for spoiler
-	function _IsSpoiler(_el)
-	{
-		var sp = $(_el).find("span").contents().filter(function ()
-		{
-			return this.nodeType === 3 && this.textContent === 'spoiler'; //TODO NOT JUST FLAIR, SEE TODO 3.1
-		});
-
-		if (sp.length >= 1)
-			return true;
-		else
-			return false;
-	}
-
-	titles = $(".Post");
-
-	if (titles.length <= oldLengthPost)
-		return;
-
-	for (let i = oldLengthPost; i < titles.length; i++)
-	{
-		if (_IsSpoiler(titles[i]))
-		{
-			titlesSpoilers.push(titles[i]);
-		}
-	}
-
-	if (titlesSpoilers.length > oldLength)
-	{
-		console.log(titlesSpoilers);
-		for (let i = 0; i < titlesSpoilers.length; i++)
-		{
-			titlesDiv[i] = titlesSpoilers[i];
-		}
-		console.log(titlesDiv);
-		for (let i = 0; i < titlesDiv.length; i++)
-		{
-			var a = $(titlesDiv[i]).find("a");
-			for (let j = 0; j < a.length; j++)
-			{
-				//console.log($(a[j]).is("data-click-id=body"));
-				if ($(a[j]).attr("data-click-id") === "body")
-				{
-					titlesTitle[i] = $(a[j]).find("h2")[0]; //TO specific NEED UPDATE! PROBABLY BREAKS PER SUBREDDIT OR TILL REDDIT ITS UPDATED
-					if (i >= oldLength)
-						originStrings.push(titlesTitle[i].innerHTML);
-				}
-			}
-		}
-		if (debug)
-		{
-			console.log(originStrings);
-		}
-		oldLength = titlesSpoilers.length;
-		MyFunction2x();
-	} else
-	{
-		return;
-	}
-
-}
-
-function MyFunction() {
-	if (titlesTitle.length === 0) {
-		for (let i = 0; i < titlesDiv.length; i++) {
-			if (titlesDiv[i].querySelector("div.entry.unvoted")) {
-				titlesTitle[i] = titlesDiv[i].querySelector("div.entry.unvoted").querySelector("p.title").querySelector("a.title");
-				originStrings[i] = titlesTitle[i].innerHTML;
-			} else {
-				titlesTitle[i] = titlesDiv[i].querySelector("div.entry").querySelector("p.title").querySelector("a.title");
-				originStrings[i] = titlesTitle[i].innerHTML;
-			}
-		}
-	}
-
-	for (let i = 0; i < titlesDiv.length; i++) {
-		len[i] = titlesTitle[i].innerHTML.length;
-		if (debug)
-		{
-			console.log(titlesTitle[i].innerHTML, len[i]);
-		}
-		stringArr[i] = titlesTitle[i].innerHTML;
-		if (stringArr[i].toString().search(stringStartbdi))
-		{
-			stringArr[i] = originStrings[i];
-		}
-		FindBracPref(len[i], stringArr[i], titlesTitle[i]);
-		//console.log("array " + stringArr[i]);
-	}
-
-}
-
-function MyFunction2x()
-{
-	if (titlesTitle.length === 0)
-	{
-		for (let i = 0; i < titlesDiv.length; i++)
-		{
-			var a = $(titlesDiv[i]).find("a");
-			for (let j = 0; j < a.length; j++)
-			{
-				//console.log($(a[j]).is("data-click-id=body"));
-				if ($(a[j]).attr("data-click-id") === "body")
-				{
-					titlesTitle[i] = $(a[j]).find("h2")[0]; //TO specific NEED UPDATE! PROBABLY BREAKS PER SUBREDDIT OR TILL REDDIT ITS UPDATED
-					originStrings[i] = titlesTitle[i].innerHTML;
-				}
-			}
-		}
-	}
-
-	for (let i = 0; i < titlesDiv.length; i++)
-	{
-		len[i] = titlesTitle[i].innerHTML.length;
-		if (debug)
-		{
-			console.log(titlesTitle[i].innerHTML, len[i]);
-		}
-		stringArr[i] = titlesTitle[i].innerHTML;
-		if (stringArr[i].toString().search(stringStartbdi))
-		{
-			stringArr[i] = originStrings[i];
-		}
-		FindBracPref(len[i], stringArr[i], titlesTitle[i]);
-		//console.log("array " + stringArr[i]);
-	}
-
-}
-function FindBracPref(l, sArr, tTitle)
-{
-	//console.log(GM_getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
-	if (btr_pTitle === true) {
-		// console.log(GetAllIndexes(sArr, "[", "("));
-		lengthOfIndexes = 0;
-		FindBrac(l, sArr, tTitle, lengthOfIndexes);
-	} else if (asterisk === true)
-	{
-		lengthOfIndexes = GetAllIndexes(sArr, "[", "(").length;
-		lengthOfIndexes += GetAllIndexes(sArr, "*", "even").length;
-		FindBrac(l, sArr, tTitle, lengthOfIndexes);
-	} else
-	{
-		lengthOfIndexes = GetAllIndexes(sArr, "[", "(").length;
-		FindBrac(l, sArr, tTitle, lengthOfIndexes);
-	}
-}
-
-function FindBrac(l, sArr, tTitle, lengthOfIndexes) {
-	switch(lengthOfIndexes) {
-		case 0:
-			ChangeString(l, sArr, tTitle, 0);
-			break;
-		case 1:
-			ChangeString(l, sArr, tTitle, 1);
-			break;
-		case 2:
-			ChangeString(l, sArr, tTitle, 2);
-			break;
-		case 3:
-			ChangeString(l, sArr, tTitle, 3);
-			break;
-		case 4:
-			ChangeString(l, sArr, tTitle, 1); //TODO 4
-			break;
-		case 5:
-			ChangeString(l, sArr, tTitle, 1); //TODO MAYBE 5
-			break;
-		default:
-			ChangeString(l, sArr, tTitle, 0);
-			return;
-	} 
-}
-
-function ChangeString(l, sArr, tTitle, amount) {
-	arrBeg = GetAllIndexes(sArr, "[", "(");
-	arrEnd = GetAllIndexes(sArr, "]", ")");
-
-	if (asterisk === true)
-	{
-		arrBeg = arrBeg.concat(GetAllIndexes(sArr, "*", "even"));
-		arrEnd = arrEnd.concat(GetAllIndexes(sArr, "*", "odd"));
-	}
-
-	arrBeg.sort(function (a, b)
-	{
-		return a - b;
-	});
-
-	arrEnd.sort(function (a, b)
-	{
-		return a - b;
-	});
-
-	if (debug)
-	{
-		console.log("*str of brackets :", arrBeg);
-		console.log("*end of brackets :", arrEnd);
-	}
-
-	if (amount === 0) {
-		string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
-		if (debug)
-		{
-			console.info(string);
-		}
-		tTitle.innerHTML = string;
-		return;
-	}
-
-	if (amount === 1)
-	{
-		if (debug)
-		{
-			console.log("*words in brackets :", sArr.substring(arrBeg[0], arrEnd[0] + 1));
-		}
-		//IF WHOLE TITLE IN BRACKETS
-		if (arrBeg[0] <= 2 && arrEnd[0] >= l - 2)
-		{
-			string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
-			if (debug)
-			{
-				console.info(string);
-			}
-			tTitle.innerHTML = string;
-			return;
-		}
-
-		if (arrBeg[0] <= 2)
-		{
-			string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, l) + ' ' + stringEndbdi;
-			if (debug)
-			{
-				console.info(string);
-			}
-			tTitle.innerHTML = string;
-			return;
-		} else if (arrEnd[0] >= l - 2) {
-			string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], l);
-			if (debug)
-			{
-				console.info(string);
-			}
-			tTitle.innerHTML = string;
-			return;
-		} else
-		{
-			string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, l) + ' ' + stringEndbdi;
-			if (debug)
-			{
-				console.info(string);
-			}
-			tTitle.innerHTML = string;
-			return;
-		}
-	}
-
-	if (amount === 2) {
-		let s = '';
-		for (let a = 0; a < arrBeg.length; a++) {
-			s += sArr.substring(arrBeg[a], arrEnd[a] + 1) + ' ';
-		}
-		if (debug)
-		{
-			console.log("*words in brackets :", s);
-		}
-
-		//IF TITLE HAS ONE BRACKET WITHOUT CLOSING ONE
-		if (arrBeg.length !== arrEnd.length)
-		{
-			ChangeString(l, sArr, tTitle, 1);
-			return;
-		}
-
-		//IF WHOLE TITLE IN BRACKETS, NOT WORKING CORRECTLY TODO!
-		if ((arrBeg[0] <= 2 && arrEnd[0] >= l - 2) || (arrBeg[1] <= 2 && arrEnd[1] >= l - 2))
-		{
-			string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
-			if (debug)
-			{
-				console.info(string);
-			}
-			tTitle.innerHTML = string;
-			return;
-		}
-
-		if (arrBeg[0] <= 2) {
-			if (arrEnd[0] + 4 > arrBeg[1])
-			{
-				string = sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, l) + ' ' + stringEndbdi;
-				if (debug)
-				{
-					console.info(string);
-				}
-				tTitle.innerHTML = string;
-				return;
-			} else if (arrEnd[1] >= l - 2) {
-				string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], l);
-				if (debug)
-				{
-					console.info(string);
-				}
-				tTitle.innerHTML = string;
-				return;
-			} else
-			{
-				string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, l) + ' ' + stringEndbdi;
-				if (debug)
-				{
-					console.info(string);
-				}
-				tTitle.innerHTML = string;
-				return;
-			}
-		} else if (arrEnd[1] >= l - 2) {
-			if (arrBeg[1] - 4 < arrEnd[0]) {
-				string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], l);
-				if (debug)
-				{
-					console.info(string);
-				}
-				tTitle.innerHTML = string;
-				return;
-			} else if (arrBeg[0] <= 2) {
-				string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], l);
-				if (debug)
-				{
-					console.info(string);
-				}
-				tTitle.innerHTML = string;
-				return;
-			} else {
-				string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], l);
-				if (debug)
-				{
-					console.info(string);
-				}
-				tTitle.innerHTML = string;
-				return;
 			}
 		} else
 		{
-			if (arrEnd[0] + 3 >= arrBeg[1]) {
-				string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, l) + ' ' + stringEndbdi;
-				if (debug)
-				{
-					console.info(string);
-				}
-				tTitle.innerHTML = string;
-				return;
-			} else {
-				string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, l) + ' ' + stringEndbdi;
-				if (debug)
-				{
-					console.info(string);
-				}
-				tTitle.innerHTML = string;
-				return;
+			for (let i = 0; i < _titlesDivQ.length; i++)
+			{
+				_titlesDiv.push(_titlesDivQ[i]);
 			}
 		}
-	}
 
-	//Three groups of brackets
-	//example sentence: "[spoiler0]_text1_[spoiler1]_text2_[spoiler2]"
-	if (amount === 3)
-	{
-		let s = '';
-		for (let a = 0; a < arrBeg.length; a++)
+		if (_titlesDiv != this.titlesDiv)
 		{
-			s += sArr.substring(arrBeg[a], arrEnd[a] + 1) + ' ';
-		}
-		if (debug)
-		{
-			console.log("*words in brackets :", s);
-		}
+			if (this.Debug)
+				console.log(_titlesDiv);
 
-		//IF TITLE HAS ONE BRACKET WITHOUT CLOSING ONE
-		if (arrBeg.length !== arrEnd.length)
-		{
-			ChangeString(l, sArr, tTitle, 1);
-			return;
-		}
+			this.titlesDiv = _titlesDiv;
 
-		//IF WHOLE TITLE IN BRACKETS, NOT WORKING CORRECTLY TODO!
-		if ((arrBeg[0] <= 2 && arrEnd[0] >= l - 2) || (arrBeg[1] <= 2 && arrEnd[1] >= l - 2) || (arrBeg[2] <= 2 && arrEnd[2] >= l - 2))
-		{
-			string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
-			if (debug)
+			for (let i = 0; i < _titlesDiv.length; i++)
 			{
-				console.info(string);
-			}
-			tTitle.innerHTML = string;
-			return;
-		}
+				if (_titlesDiv[i].querySelectorAll(".btr_title").length > 0)
+					continue;
 
-		//case one:"[spoiler0]..."
-		if (arrBeg[0] <= 2)
-		{
-			//case one:one:"[spoiler0][spoiler1]..."
-			if (arrEnd[0] + 4 > arrBeg[1])
-			{
-				//case one:one:one:"[spoiler0][spoiler1][spoiler2]_text"
-				if (arrEnd[1] + 4 > arrBeg[2])
+				let _title = _titlesDiv[i].querySelectorAll("h3, a.title");
+
+				if (this.Debug)
+					console.log(_title);
+
+				if (this.btr_pTitle == true)
 				{
-					//"[spoiler0][spoiler1][spoiler2]<blur>text</blur>"
-					string = sArr.substring(arrBeg[0], arrEnd[2] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[2] + 1, l) + ' ' + stringEndbdi;
-					if (debug)
-					{
-						console.info(string);
-					}
-					tTitle.innerHTML = string;
-					return;
-				//case one:one:two:"[spoiler0][spoiler1]_text_[spoiler2]"
-				} else if (arrEnd[2] >= l - 2)
+					let lengthOfIndexes = 0;
+
+					this.ChangeString(_title[0].textContent.length, _title[0].textContent, _title[0], lengthOfIndexes);
+				}
+				else if (this.asterisk == true)
 				{
-					//"[spoiler0][spoiler1]<blur>text</blur>[spoiler2]"
-					string = sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], l);
-					if (debug)
-					{
-						console.info(string);
-					}
-					tTitle.innerHTML = string;
-					return;
-				//case one:one:three:"[spoiler0][spoiler1]_text1_[spoiler2]_text2"
+					let lengthOfIndexes = this.GetAllIndexes(_title[0].textContent, "[", "(").length;
+
+					lengthOfIndexes += this.GetAllIndexes(_title[0].textContent, "*", "even").length;
+
+					this.ChangeString(_title[0].textContent.length, _title[0].textContent, _title[0], lengthOfIndexes);
 				} else
 				{
-					//"[spoiler0][spoiler1]<blur>text1</blur>[spoiler2]<blur>text2</blur>"
-					string = sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], arrEnd[2] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[2] + 1, l) + ' ' + stringEndbdi;
-					if (debug)
-					{
-						console.info(string);
-					}
-					tTitle.innerHTML = string;
-					return;
+					let lengthOfIndexes = this.GetAllIndexes(_title[0].textContent, "[", "(").length;
+
+					this.ChangeString(_title[0].textContent.length, _title[0].textContent, _title[0], lengthOfIndexes);
 				}
-			//case one:two:"[spoiler0]...[spoiler2]"
-			//"[spoiler0]...[spoiler1]":NEVER HAPPEND
-			} else if (arrEnd[2] >= l - 2)
+			}
+		}
+	}
+
+	ChangeString(l, sArr, tTitle, amountL)
+	{
+		const stringStartbdi = '<bdi class = "btr_main btr_title btr_trans">',
+			stringEndbdi = '</bdi>';
+
+		let amount = amountL;
+
+		let string = "";
+
+		if (amount > 3)
+			amount = 1;
+
+		let arrBeg = this.GetAllIndexes(sArr, "[", "(");
+		let arrEnd = this.GetAllIndexes(sArr, "]", ")");
+
+		if (this.asterisk === true)
+		{
+			arrBeg = arrBeg.concat(this.GetAllIndexes(sArr, "*", "even"));
+			arrEnd = arrEnd.concat(this.GetAllIndexes(sArr, "*", "odd"));
+		}
+
+		arrBeg.sort(function (a, b)
+		{
+			return a - b;
+		});
+
+		arrEnd.sort(function (a, b)
+		{
+			return a - b;
+		});
+
+		if (amount === 0)
+		{
+			string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
+			if (this.Debug)
 			{
-				//case one:two:one:"[spoiler0]_text_[spoiler1][spoiler2]"
-				if (arrEnd[1] + 4 > arrBeg[2])
-				{
-					//"[spoiler0]<blur>text</blur>[spoiler1][spoiler2]"
-					string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], l);
-					if (debug)
-					{
-						console.info(string);
-					}
-					tTitle.innerHTML = string;
-					return;
-				}
-				//case one:two:two:"[spoiler0]_text1_[spoiler1]_text2_[spoiler2]"
-				else
-				{
-					//"[spoiler0]<blur>text1</blur>[spoiler1]<blur>text2</blur>[spoiler2]"
-					string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], l);
-					if (debug)
-					{
-						console.info(string);
-					}
-					tTitle.innerHTML = string;
-					return;
-				}
-			//case one:three:"[spoiler0]_text1_[spoiler1]_text2_[spoiler2]_text3"
-			} else
+				console.info(string);
+			}
+			tTitle.innerHTML = string;
+			return;
+		}
+
+		if (amount === 1)
+		{
+			if (this.Debug)
 			{
-				//"[spoiler0]<blur>text1</blur>[spoiler1]<blur>text2</blur>[spoiler2]<blur>text3</blur>"
-				string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], arrEnd[2] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[2] + 1, l) + ' ' + stringEndbdi;
-				if (debug)
+				console.log("*words in brackets :", sArr.substring(arrBeg[0], arrEnd[0] + 1));
+			}
+			//IF WHOLE TITLE IN BRACKETS
+			if (arrBeg[0] <= 2 && arrEnd[0] >= l - 2)
+			{
+				string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
+				if (this.Debug)
 				{
 					console.info(string);
 				}
 				tTitle.innerHTML = string;
 				return;
 			}
-		//case two:"...[spoiler2]"
-		} else if (arrEnd[2] >= l - 2)
-		{
-			//case two:one:"...[spoiler1][spoiler2]"
-			if (arrEnd[1] + 4 > arrBeg[2])
+
+			if (arrBeg[0] <= 2)
 			{
-				//case two:one:one:"text_[spoiler0][spoiler1][spoiler2]"
+				string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, l) + ' ' + stringEndbdi;
+				if (this.Debug)
+				{
+					console.info(string);
+				}
+				tTitle.innerHTML = string;
+				return;
+			} else if (arrEnd[0] >= l - 2)
+			{
+				string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], l);
+				if (this.Debug)
+				{
+					console.info(string);
+				}
+				tTitle.innerHTML = string;
+				return;
+			} else
+			{
+				string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, l) + ' ' + stringEndbdi;
+				if (this.Debug)
+				{
+					console.info(string);
+				}
+				tTitle.innerHTML = string;
+				return;
+			}
+		}
+
+		if (amount === 2)
+		{
+			let s = '';
+			for (let a = 0; a < arrBeg.length; a++)
+			{
+				s += sArr.substring(arrBeg[a], arrEnd[a] + 1) + ' ';
+			}
+			if (this.Debug)
+			{
+				console.log("*words in brackets :", s);
+			}
+
+			//IF TITLE HAS ONE BRACKET WITHOUT CLOSING ONE
+			if (arrBeg.length !== arrEnd.length)
+			{
+				ChangeString(l, sArr, tTitle, 1);
+				return;
+			}
+
+			//IF WHOLE TITLE IN BRACKETS, NOT WORKING CORRECTLY TODO!
+			if ((arrBeg[0] <= 2 && arrEnd[0] >= l - 2) || (arrBeg[1] <= 2 && arrEnd[1] >= l - 2))
+			{
+				string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
+				if (this.Debug)
+				{
+					console.info(string);
+				}
+				tTitle.innerHTML = string;
+				return;
+			}
+
+			if (arrBeg[0] <= 2)
+			{
 				if (arrEnd[0] + 4 > arrBeg[1])
 				{
-					//"<blur>text</blur>[spoiler0][spoiler1][spoiler2]"
-					string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], l);
-					if (debug)
+					string = sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, l) + ' ' + stringEndbdi;
+					if (this.Debug)
 					{
 						console.info(string);
 					}
 					tTitle.innerHTML = string;
 					return;
-					//case two:one:one:"text1_[spoiler0]_text2_[spoiler1][spoiler2]"
-					//"[spoiler0]_text_[spoiler1][spoiler2]":NEVER HAPPEND
+				} else if (arrEnd[1] >= l - 2)
+				{
+					string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], l);
+					if (this.Debug)
+					{
+						console.info(string);
+					}
+					tTitle.innerHTML = string;
+					return;
 				} else
 				{
-					//"<blur>text1</blur>[spoiler0]<blur>text2</blur>[spoiler1][spoiler2]"
-					string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrEnd[1] + 1, l);
-					if (debug)
+					string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, l) + ' ' + stringEndbdi;
+					if (this.Debug)
 					{
 						console.info(string);
 					}
 					tTitle.innerHTML = string;
 					return;
 				}
-				//case two:two:"text1_[spoiler0][spoiler1]_text2_[spoiler2]"
-			} else if (arrEnd[0] + 4 > arrBeg[1])
+			} else if (arrEnd[1] >= l - 2)
 			{
-				//"<blur>text1</blur>[spoiler0][spoiler1]<blur>text2</blur>[spoiler2]"
-				string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrEnd[2] + 1, l);
-				if (debug)
+				if (arrBeg[1] - 4 < arrEnd[0])
 				{
-					console.info(string);
+					string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], l);
+					if (this.Debug)
+					{
+						console.info(string);
+					}
+					tTitle.innerHTML = string;
+					return;
+				} else if (arrBeg[0] <= 2)
+				{
+					string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], l);
+					if (this.Debug)
+					{
+						console.info(string);
+					}
+					tTitle.innerHTML = string;
+					return;
+				} else
+				{
+					string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], l);
+					if (this.Debug)
+					{
+						console.info(string);
+					}
+					tTitle.innerHTML = string;
+					return;
 				}
-				tTitle.innerHTML = string;
-				return;
-				//case two:two:"text1_[spoiler0]_text2_[spoiler1]_text3_[spoiler2]"
 			} else
 			{
-				//"<blur>text1</blur>[spoiler0]<blur>text2</blur>[spoiler1]<blur>text3</blur>[spoiler2]"
-				string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], l);
-				if (debug)
+				if (arrEnd[0] + 3 >= arrBeg[1])
+				{
+					string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, l) + ' ' + stringEndbdi;
+					if (this.Debug)
+					{
+						console.info(string);
+					}
+					tTitle.innerHTML = string;
+					return;
+				} else
+				{
+					string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, l) + ' ' + stringEndbdi;
+					if (this.Debug)
+					{
+						console.info(string);
+					}
+					tTitle.innerHTML = string;
+					return;
+				}
+			}
+		}
+
+		//Three groups of brackets
+		//example sentence: "[spoiler0]_text1_[spoiler1]_text2_[spoiler2]"
+		if (amount === 3)
+		{
+			let s = '';
+			for (let a = 0; a < arrBeg.length; a++)
+			{
+				s += sArr.substring(arrBeg[a], arrEnd[a] + 1) + ' ';
+			}
+			if (this.Debug)
+			{
+				console.log("*words in brackets :", s);
+			}
+
+			//IF TITLE HAS ONE BRACKET WITHOUT CLOSING ONE
+			if (arrBeg.length !== arrEnd.length)
+			{
+				ChangeString(l, sArr, tTitle, 1);
+				return;
+			}
+
+			//IF WHOLE TITLE IN BRACKETS, NOT WORKING CORRECTLY TODO!
+			if ((arrBeg[0] <= 2 && arrEnd[0] >= l - 2) || (arrBeg[1] <= 2 && arrEnd[1] >= l - 2) || (arrBeg[2] <= 2 && arrEnd[2] >= l - 2))
+			{
+				string = stringStartbdi + ' ' + sArr + ' ' + stringEndbdi;
+				if (this.Debug)
 				{
 					console.info(string);
 				}
 				tTitle.innerHTML = string;
 				return;
 			}
-		//case three:"text1_[spoiler0]_text2_[spoiler1]_text3_[spoiler2]_text4"
-		//DO I NEED ALL CASES??? TODO!
+
+			//case one:"[spoiler0]..."
+			if (arrBeg[0] <= 2)
+			{
+				//case one:one:"[spoiler0][spoiler1]..."
+				if (arrEnd[0] + 4 > arrBeg[1])
+				{
+					//case one:one:one:"[spoiler0][spoiler1][spoiler2]_text"
+					if (arrEnd[1] + 4 > arrBeg[2])
+					{
+						//"[spoiler0][spoiler1][spoiler2]<blur>text</blur>"
+						string = sArr.substring(arrBeg[0], arrEnd[2] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[2] + 1, l) + ' ' + stringEndbdi;
+						if (this.Debug)
+						{
+							console.info(string);
+						}
+						tTitle.innerHTML = string;
+						return;
+						//case one:one:two:"[spoiler0][spoiler1]_text_[spoiler2]"
+					} else if (arrEnd[2] >= l - 2)
+					{
+						//"[spoiler0][spoiler1]<blur>text</blur>[spoiler2]"
+						string = sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], l);
+						if (this.Debug)
+						{
+							console.info(string);
+						}
+						tTitle.innerHTML = string;
+						return;
+						//case one:one:three:"[spoiler0][spoiler1]_text1_[spoiler2]_text2"
+					} else
+					{
+						//"[spoiler0][spoiler1]<blur>text1</blur>[spoiler2]<blur>text2</blur>"
+						string = sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], arrEnd[2] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[2] + 1, l) + ' ' + stringEndbdi;
+						if (this.Debug)
+						{
+							console.info(string);
+						}
+						tTitle.innerHTML = string;
+						return;
+					}
+					//case one:two:"[spoiler0]...[spoiler2]"
+					//"[spoiler0]...[spoiler1]":NEVER HAPPEND
+				} else if (arrEnd[2] >= l - 2)
+				{
+					//case one:two:one:"[spoiler0]_text_[spoiler1][spoiler2]"
+					if (arrEnd[1] + 4 > arrBeg[2])
+					{
+						//"[spoiler0]<blur>text</blur>[spoiler1][spoiler2]"
+						string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], l);
+						if (this.Debug)
+						{
+							console.info(string);
+						}
+						tTitle.innerHTML = string;
+						return;
+					}
+					//case one:two:two:"[spoiler0]_text1_[spoiler1]_text2_[spoiler2]"
+					else
+					{
+						//"[spoiler0]<blur>text1</blur>[spoiler1]<blur>text2</blur>[spoiler2]"
+						string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], l);
+						if (this.Debug)
+						{
+							console.info(string);
+						}
+						tTitle.innerHTML = string;
+						return;
+					}
+					//case one:three:"[spoiler0]_text1_[spoiler1]_text2_[spoiler2]_text3"
+				} else
+				{
+					//"[spoiler0]<blur>text1</blur>[spoiler1]<blur>text2</blur>[spoiler2]<blur>text3</blur>"
+					string = sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], arrEnd[2] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[2] + 1, l) + ' ' + stringEndbdi;
+					if (this.Debug)
+					{
+						console.info(string);
+					}
+					tTitle.innerHTML = string;
+					return;
+				}
+				//case two:"...[spoiler2]"
+			} else if (arrEnd[2] >= l - 2)
+			{
+				//case two:one:"...[spoiler1][spoiler2]"
+				if (arrEnd[1] + 4 > arrBeg[2])
+				{
+					//case two:one:one:"text_[spoiler0][spoiler1][spoiler2]"
+					if (arrEnd[0] + 4 > arrBeg[1])
+					{
+						//"<blur>text</blur>[spoiler0][spoiler1][spoiler2]"
+						string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], l);
+						if (this.Debug)
+						{
+							console.info(string);
+						}
+						tTitle.innerHTML = string;
+						return;
+						//case two:one:one:"text1_[spoiler0]_text2_[spoiler1][spoiler2]"
+						//"[spoiler0]_text_[spoiler1][spoiler2]":NEVER HAPPEND
+					} else
+					{
+						//"<blur>text1</blur>[spoiler0]<blur>text2</blur>[spoiler1][spoiler2]"
+						string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrEnd[1] + 1, l);
+						if (this.Debug)
+						{
+							console.info(string);
+						}
+						tTitle.innerHTML = string;
+						return;
+					}
+					//case two:two:"text1_[spoiler0][spoiler1]_text2_[spoiler2]"
+				} else if (arrEnd[0] + 4 > arrBeg[1])
+				{
+					//"<blur>text1</blur>[spoiler0][spoiler1]<blur>text2</blur>[spoiler2]"
+					string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrEnd[2] + 1, l);
+					if (this.Debug)
+					{
+						console.info(string);
+					}
+					tTitle.innerHTML = string;
+					return;
+					//case two:two:"text1_[spoiler0]_text2_[spoiler1]_text3_[spoiler2]"
+				} else
+				{
+					//"<blur>text1</blur>[spoiler0]<blur>text2</blur>[spoiler1]<blur>text3</blur>[spoiler2]"
+					string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], l);
+					if (this.Debug)
+					{
+						console.info(string);
+					}
+					tTitle.innerHTML = string;
+					return;
+				}
+				//case three:"text1_[spoiler0]_text2_[spoiler1]_text3_[spoiler2]_text4"
+				//DO I NEED ALL CASES??? TODO!
+			} else
+			{
+				//"<blur>text1</blur>[spoiler0]<blur>text2</blur>[spoiler1]<blur>text3</blur>[spoiler2]<blur>text4</blur>"
+				string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], arrEnd[2] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[2] + 1, l) + ' ' + stringEndbdi;
+				if (this.Debug)
+				{
+					console.info(string);
+				}
+				tTitle.innerHTML = string;
+				return;
+			}
+
+		}
+	}
+
+	//second value can be "even" or "odd"
+	GetAllIndexes(arr, val1, val2)
+	{
+		let indexes = [], temp = [], x, i;
+		switch (val2)
+		{
+			case "even":
+				for (x = 0; x < arr.length; x++)
+					if (arr[x] === val1)
+						temp.push(x);
+				for (i = 0; i < temp.length; i++)
+				{
+					if (this.IsEven(i))
+					{
+						indexes.push(temp[i]);
+					}
+				}
+				break;
+			case "odd":
+				for (x = 0; x < arr.length; x++)
+					if (arr[x] === val1)
+						temp.push(x);
+				for (i = 0; i < temp.length; i++)
+				{
+					if (!this.IsEven(i))
+					{
+						indexes.push(temp[i]);
+					}
+				}
+				break;
+			default:
+				for (x = 0; x < arr.length; x++)
+					if (arr[x] === val1 || arr[x] === val2)
+						indexes.push(x);
+				break;
+		}
+		return indexes;
+	}
+
+	IsEven(n)
+	{
+		return n === parseFloat(n) ? !(n % 2) : void 0;
+	}
+
+	OptionsUI()
+	{
+		document.body.insertAdjacentHTML("beforeend", `<div id=btrSettings class='side jAyrXr'><div class=spaser ><div class=sidecontentbox><span class=btr_closeButton>&times</span> \
+  <div class=title><h1>Settings of Blur Title Reddit` + GM.info.script.version + `</h1></div>\
+  <ul class=content><li> \
+  <form> \
+  <br> \
+  <p>Bluring option:</p>\
+  <input type=radio name=title id=btr_showTitle >Show brackets</input><br> \
+  <input type=radio name=title id=btr_hideTitle >Hide brackets</input><br><br> \
+	<input type=checkbox name=asterisk id=asterisk >Show what between asterisks like brackets</input><br><br> \
+  <input type=checkbox name=debug id=debug >Debug</input><br> \
+  </form> <br> \
+  <button id=btr_hide class=hauwm>Hide Settings</button></li></ul></div></div></div>`);
+
+
+		//SET UI SETTINGS
+		document.getElementById("debug").setAttribute("checked", this.Debug);
+		document.getElementById("asterisk").setAttribute("checked", this.asterisk);
+		
+
+		if (this.btr_pTitle === true)
+		{
+			document.getElementById("btr_hideTitle").setAttribute("checked", true);
 		} else
 		{
-			//"<blur>text1</blur>[spoiler0]<blur>text2</blur>[spoiler1]<blur>text3</blur>[spoiler2]<blur>text4</blur>"
-			string = stringStartbdi + ' ' + sArr.substring(0, arrBeg[0]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[0], arrEnd[0] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[0] + 1, arrBeg[1]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[1], arrEnd[1] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[1] + 1, arrBeg[2]) + ' ' + stringEndbdi + ' ' + sArr.substring(arrBeg[2], arrEnd[2] + 1) + ' ' + stringStartbdi + ' ' + sArr.substring(arrEnd[2] + 1, l) + ' ' + stringEndbdi;
+			document.getElementById("btr_showTitle").setAttribute("checked", true);
+		}
+
+		document.getElementById("btrSettings").style.display = "none";
+
+		//CHANGE SETTINGS BY INTERACT WITH UI
+		document.getElementById("debug").addEventListener("click", async (e) =>
+		{
+			if (btr.Debug === true)
+			{
+				GM.setValue("btr_debug", false);
+				btr.Debug = await GM.getValue("btr_debug");
+			} else
+			{
+				GM.setValue("btr_debug", true);
+				btr.Debug = await GM.getValue("btr_debug");
+			}
+
+			confirm("Settings has been changed.");
+			if (btr.Debug)
+			{
+				console.log('debug: ' + await GM.getValue("btr_debug") + ' and debug: ' + btr.Debug);
+			}
+		});
+
+		document.getElementById("asterisk").addEventListener("click", async (e) =>
+		{
+			if (btr.asterisk === true)
+			{
+				GM.setValue("btr_asterisk", false);
+				btr.asterisk = await GM.getValue("btr_asterisk");
+			} else
+			{
+				GM.setValue("btr_asterisk", true);
+				btr.asterisk = await GM.getValue("btr_asterisk");
+			}
+
+			confirm("Settings has been changed.");
+			if (btr.Debug)
+			{
+				console.log('btr_asterisk: ' + await GM.getValue("btr_asterisk") + ' and asterisk: ' + btr.asterisk);
+			}
+		});
+
+		/* TODO!
+		document.getElementById("#btr_showTitle").onclick((e) =>
+		{
+			GM.setValue("btr_GMTitle", false);
+			btr_pTitle = await GM.getValue("btr_GMTitle");
+			ReplaceOriginalTitles();
+			MyFunction();
+			alert("Settings has been changed. Now brackets showing.");
 			if (debug)
 			{
-				console.info(string);
+				console.log('btr_GMTitle: ' + await GM.getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
 			}
-			tTitle.innerHTML = string;
+		});
+		
+
+		$("#btr_hideTitle").change(async function ()
+		{
+			GM.setValue("btr_GMTitle", true);
+			btr_pTitle = await GM.getValue("btr_GMTitle");
+			ReplaceOriginalTitles();
+			MyFunction();
+			alert("Settings has been changed. Now brackets hiding.");
+			if (debug)
+			{
+				console.log('btr_GMTitle: ' + await GM.getValue("btr_GMTitle") + ' and btr_pTitle: ' + btr_pTitle);
+			}
+		});
+		*/
+
+		//TODO ???
+		//$(".side").append("<div class=spacer><div class=sidecontentbox><div class=title><h1>BLUR TITLE REDDIT</h1></div><ul class=content><li><button id=btr_show >Show settings</button></li></ul></div></div>");
+		//console.log(currentLocation.pathname);
+		//if (currentLocation.pathname === "/r/Steam")
+		//{
+		//    $(".debuginfo").after("<p><a id=btr_show style={float=right;}>show settings blur title reddit</a></p>");
+		//} else {
+		//$(".side").append("<div class=spacer><div class=account-activity-box><p><a id=btr_show >show settings blur title reddit</a></p></div></div>");
+		//}
+
+		document.querySelector("div[data-testid='subreddit-sidebar'], div.side").insertAdjacentHTML("beforeend", `<div class=spacer><div class=account-activity-box style=cursor:pointer;><p><a id=btr_show >show settings for blur title reddit</a></p></div></div>`);
+
+		document.getElementById("btr_hide").addEventListener("click", (e) =>
+		{
+			document.getElementById("btrSettings").style.display = "none";
+		});
+
+		document.querySelector(".btr_closeButton").addEventListener("click", (e) =>
+		{
+			document.getElementById("btrSettings").style.display = "none";
+		});
+
+		document.getElementById("btr_show").addEventListener("click", (e) =>
+		{
+			document.getElementById("btrSettings").style.display = "block";
+
+			if (!document.getElementById("btrSettings").classList.contains("btr_opt"))
+				document.getElementById("btrSettings").className += " btr_opt";
+		});
+	}
+
+	//Start
+	//async Methods/Functions GM_VALUE
+	async HasValueGM(nameVal, optValue)
+	{
+		let vals = await GM.listValues();
+
+		if (vals.length === 0)
+		{
+			if (optValue !== undefined)
+			{
+				GM.setValue(nameVal, optValue);
+				return true;
+			} else
+			{
+				return false;
+			}
+		}
+
+		if (typeof nameVal !== "string")
+		{
+			return alert("name of value: '" + nameVal + "' are not string");
+		}
+
+		for (let i = 0; i < vals.length; i++)
+		{
+			if (vals[i] === nameVal)
+			{
+				return true;
+			}
+		}
+
+		if (optValue !== undefined)
+		{
+			GM.setValue(nameVal, optValue);
+			return true;
+		} else
+		{
+			return false;
+		}
+	}
+	async DeleteValuesGM(nameVal)
+	{
+		let vals = await GM.listValues();
+
+		if (vals.length === 0 || typeof nameVal !== "string")
+		{
 			return;
 		}
 
+		switch (nameVal)
+		{
+			case "all":
+				for (let i = 0; i < vals.length; i++)
+				{
+					if (vals[i] !== "adm")
+					{
+						GM.deleteValue(vals[i]);
+					}
+				}
+				break;
+			case "old":
+				for (let i = 0; i < vals.length; i++)
+				{
+					if (vals[i] === "debug" || vals[i] === "debugA")
+					{
+						GM.deleteValue(vals[i]);
+					}
+				}
+				break;
+			default:
+				for (let i = 0; i < vals.length; i++)
+				{
+					if (vals[i] === nameVal)
+					{
+						GM.deleteValue(nameVal);
+					}
+				}
+				break;
+		}
 	}
-}
-
-//second value can be "even" or "odd"
-function GetAllIndexes(arr, val1, val2) {
-	var indexes = [], temp = [], x, i;
-	switch (val2)
+	async UpdateGM(what)
 	{
-		case "even":
-			for (x = 0; x < arr.length; x++)
-				if (arr[x] === val1)
-					temp.push(x);
-			for (i = 0; i < temp.length; i++)
-			{
-				if (IsEven(i))
-				{
-					indexes.push(temp[i]);
-				}
-			}
-			break;
-		case "odd":
-			for (x = 0; x < arr.length; x++)
-				if (arr[x] === val1)
-					temp.push(x);
-			for (i = 0; i < temp.length; i++)
-			{
-				if (!IsEven(i))
-				{
-					indexes.push(temp[i]);
-				}
-			}
-			break;
-		default:
-			for (x = 0; x < arr.length; x++)
-				if (arr[x] === val1 || arr[x] === val2)
-					indexes.push(x);
-			break;
+		var gmVal;
+
+		switch (what)
+		{
+			case "options":
+				gmVal = JSON.stringify(options.values);
+				GM.setValue("pp_options", gmVal);
+				break;
+			default:
+				alert("class:Options.UpdateGM(" + what + "). default switch");
+				break;
+		}
 	}
-	return indexes;
+	//async Methods/Functions GM_VALUE
+	//End
 }
 
-function ReplaceOriginalTitles()
+let btr;
+
+window.onload = function ()
 {
-	for (let i = 0; i < titlesTitle.length; i++) {
-		titlesTitle[i].innerHTML = originStrings[i];
-	}
-}
+	btr = new BlurTitleReddit();
 
-function MenuCommand() {
-	$("#btrSettings").show(1000);
-	$("#btrSettings").addClass("btr_opt");
-}
-
-function IsEven(n)
-{
-	return n === parseFloat(n) ? !(n % 2) : void 0;
-}
-
-// ------------
-//  TODO
-// ------------
-
-/* TODO STARTS
-✓	 0)SUPPORT NEW WEB!!!	//DONE 0.7.00
-✓	 1)Rewrite everything in Jquery ***RESEARCH NEEDED*** by this mean delete GM_addstyle //DONE 0.2.05
-	2)Made it exclude of users, mean that post of their users WILL NOT bluring, Partial done(array) in 0.0.0.08
-	3)Make it exclude of linkflairs, because every subreddit has its own flair its hard ***RESEARCH NEEDED***
-	 3.1)Some subreddits has own spoiler-flair, which can be good to blur, because they don't use buildin in reddit
-✓	 4)Support RES ***RESEARCH NEEDED*** NOPE NOPE NOPE, OMG        //DONE 0.3.00
-✓	  4.1)Or similar infinite reddit ***RESEARCH NEEDED*** I think this too     //DONE 0.3.00
-✓	 5)Support Chrome    //DONE 0.0.08    
-✓	 6)Make it different colors(if used, like in r/anime rewatch is blue and discussion are red) in css trough css [href=] or id #  that was easy	//DONE 0.4.03 
-✓	 7)Make it proporly edentity everything in brackets   //DONE 0.0.07                                                                           
-✓	  7.1)Make it blur title which have more then 3 groups of brackets	//DONE 0.4.00
-	   7.1.1)Do I need 4 group of brackets? its pretty rare when title has 3 groups of brackets.
-	 7.2)Exclude some brackets which have text like 2011, jan 2007, etc. probably specific subreddit only
-	8)What it make that if you clicked on post which are blurry WILL NOT going to blurry again ***RESEARCH NEEDED***
-✓	 8.1)What it remember color after you clicked ***RESEARCH NEEDED***		a bit meh	//DONE 0.4.03
-		8.1.1)Can i find fix for this? ***RESEARCH NEEDED***
-	9)Make it if brackets in the middle should unblury two or more part, dont know how currently ***RESEARCH NEEDED***
-	10)Want it if title whithout brackets but has name of anime, show etc. blur everything exclude NAME, its hard
-✓    11)Add if title(Somehow)... full title in brackets, forced blur anyway      //DONE 0.2.08 
-	12)Make it work when searching
-	13)Make options ***RESEARCH NEEDED*** Partial done(array) in 0.0.0.09
-✓   13.0)UI     //DONE 0.1.00 
-✓	  13.0.1)Make UI with style as subreddits    //DONE 0.2.00 
-	    13.0.1.1)To many subreddits break style of settings(unusable etc.), will be removed... probably
-✓	  13.0.2)Make it more clear UI   //DONE 0.2.00 
-✓   13.1)Make option to blur full title, no matter of brackets     //DONE 0.1.00 
-	13.2)Make it add users
-✓	 13.3)Make it a bit different opening settings(not as a button)    //DONE 0.2.00  
-	13.4)Make settings per subreddit??? probably not
-✓	 13.5)Make it show settings through Menu Monkey    //DONE 0.2.02
-✓	 13.6)Make it option to exclude, what between **, because some people do not use brackets	//DONE 0.5.00
-✓	 14)Support GM4+, GM3 and other userscript extensions, beta 0.6.00	//HACK DONE 0.6.01		//DONE 0.6.02
-	 14.1)DELETE CALLBACK!!!
-TODO ENDS */
+	setTimeout(() =>
+	{
+		btr.Main();
+		console.log(btr);
+	}, 1000);
+};

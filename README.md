@@ -13,6 +13,6 @@ Blurring a title which marked as spoiler in reddit, just like in fallout subredd
 
 [ExampleGif](https://i.imgur.com/1TLbyid.gifv)
 
-Settings right after account activity [here](https://i.imgur.com/dKhE6gt.png) or from [menu monkey](https://i.imgur.com/yqmaroS.png).
+Settings right after account activity [here](https://i.imgur.com/dKhE6gt.png).
 
 *Sorry for any grammar error, english not my native language.*
